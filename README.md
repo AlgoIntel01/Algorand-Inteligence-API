@@ -93,6 +93,18 @@ Agent → x402 middleware (@x402-avm/hono: 402 challenge → verify → settle)
 
 ## Roadmap
 
-Per the build spec: heuristics engine (cluster/precursor detection), chain adapters
-(Nodely, viem, Solana RPC), cache layer, LLM verdict synthesis, CCTP funding-rail CLI,
-MCP server + agent-framework plugins.
+Delivered in phases:
+
+- **Phase 1 — ✅ Payments live.** Repo, x402 middleware on Algorand mainnet, all three
+  routes behind the paywall, one proven end-to-end paid call in USDCa.
+- **Phase 2 — ✅ Real `/token/analyze`.** Cross-chain token data (GoPlus for EVM/Solana,
+  Nodely + Vestige for Algorand), deterministic rug scoring, LLM/template verdict, SQLite
+  cache, Bazaar discovery metadata on every route.
+- **Phase 3 — `/wallet/analyze`.** Port the cluster / precursor-detection heuristics —
+  the product's real edge.
+- **Phase 4 — `/watch/poll` deltas + funding rail.** Real change detection over watched
+  wallets/tokens; ship the CCTP funding-rail CLI (Base/Solana → ready-to-pay Algorand
+  wallet) and open-source it.
+- **Phase 5 — Distribution.** MCP server and ElizaOS / OpenClaw plugins; get agents
+  integrating and paying.
+- **Phase 6 — Harden & submit.** Monitoring, buffer, competition submission.
