@@ -123,52 +123,18 @@ locally before signing — the CLI refuses to sign anything containing a rekey, 
 an unreasonable fee, or an unexpected asset. Use `--dry-run` to see the quote and safety
 check without submitting anything.
 
-## Self-hosting
+## Where the data comes from
 
-You don't need to host anything to use Verdict — but the source is here if you want your
-own deployment.
+Token analysis draws on GoPlus for EVM chains and Solana, and the Nodely indexer plus
+Vestige for Algorand. Wallet analysis uses Blockscout for EVM chains and Nodely for
+Algorand. Scores are deterministic and the contributing signals are always named, so you can
+see *why* something scored the way it did rather than trusting a number.
 
-```bash
-npm install
-npm run create-wallet    # generates a receiving wallet into .env (gitignored)
-# fund the printed address with ~0.3 ALGO, then:
-npm run optin-usdca      # opt it into USDC so it can receive payments
-npm run dev              # http://localhost:3402
-```
+## Run your own instance
 
-Configure via `.env` (see `.env.example`):
-
-| Variable | | Purpose |
-|---|---|---|
-| `SELLER_ADDRESS` | required | Algorand address that receives payments |
-| `NETWORK` | required | `mainnet` or `testnet` |
-| `PUBLIC_BASE_URL` | required | Your public URL — agents discover you at this address |
-| `FACILITATOR_URL`, `PORT` | | Default to GoPlausible and 3402 |
-| `ANTHROPIC_API_KEY` | optional | LLM-written verdicts; without it a deterministic template is used |
-| `ETHERSCAN_API_KEY` | optional | Enables BSC wallet analysis (free key) |
-
-### How it fits together
-
-```
-Agent → x402 middleware (402 challenge → verify → settle)
-      → GoPlausible facilitator (Algorand mainnet, fee abstraction)
-      → route handler → cache → chain adapters → heuristics → verdict synthesis
-```
-
-| Path | Purpose |
-|---|---|
-| `src/index.ts` | Hono app, paywalled routes, Bazaar discovery metadata |
-| `src/routes/` | Endpoint handlers |
-| `src/adapters/` | Chain data: GoPlus (EVM/Solana), Nodely + Vestige (Algorand), Blockscout (EVM wallets) |
-| `src/analysis/` | Rug scoring and wallet heuristics |
-| `src/watch/` | Snapshots, event log and change detection |
-| `src/verdict.ts` | Verdict synthesis, cached by signals hash |
-| `mcp/` | The published MCP server |
-| `scripts/` | Wallet tooling and the funding rail |
-
-Data comes from GoPlus, the Nodely Algorand indexer, Vestige and Blockscout. Analyses are
-cached (10 minutes for tokens, 2 for wallets) and verdicts regenerate only when the
-underlying signals change.
+You don't need to host anything to use Verdict, but the source is all here — `npm install &&
+npm run dev` runs it locally. See **[DEPLOYING.md](DEPLOYING.md)** for wallet setup,
+configuration, deployment and architecture.
 
 ## Support and license
 
