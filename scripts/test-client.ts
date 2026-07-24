@@ -15,6 +15,12 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const apiUrl = process.env.API_URL ?? "http://localhost:3402";
 const network = process.env.NETWORK === "testnet" ? "testnet" : "mainnet";
 const caip2 = network === "mainnet" ? ALGORAND_MAINNET_CAIP2 : ALGORAND_TESTNET_CAIP2;
+// The client scheme defaults to a TESTNET algod when no algodUrl is given, which
+// stamps the wrong genesis hash on the payment txn. Pin it to the active network.
+const algodUrl =
+  network === "mainnet"
+    ? "https://mainnet-api.algonode.cloud"
+    : "https://testnet-api.algonode.cloud";
 
 const keyInput = process.env.BUYER_PRIVATE_KEY_B64;
 if (!keyInput) {
@@ -28,7 +34,7 @@ const privateKeyB64 = keyInput.trim().includes(" ")
 const signer = toClientAvmSigner(privateKeyB64);
 console.log(`Buyer address: ${signer.address}`);
 
-const client = new x402Client().register(caip2, new ExactAvmScheme(signer));
+const client = new x402Client().register(caip2, new ExactAvmScheme(signer, { algodUrl }));
 const fetchWithPay = wrapFetchWithPayment(fetch, client);
 
 console.log(`\nPOST ${apiUrl}/watch/poll ($0.01) ...`);

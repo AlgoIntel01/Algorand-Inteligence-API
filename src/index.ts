@@ -4,6 +4,7 @@ import { paymentMiddleware } from "@x402-avm/hono";
 import { HTTPFacilitatorClient, x402ResourceServer } from "@x402-avm/core/server";
 import type { RoutesConfig, HTTPRequestContext } from "@x402-avm/core/server";
 import { registerExactAvmScheme } from "@x402-avm/avm/exact/server";
+import { loggingFacilitator } from "./facilitator.js";
 import { assertConfig, config, PRICES, SUPPORTED_CHAINS } from "./config.js";
 import { wallet } from "./routes/wallet.js";
 import { token } from "./routes/token.js";
@@ -11,7 +12,7 @@ import { watch } from "./routes/watch.js";
 
 assertConfig();
 
-const facilitator = new HTTPFacilitatorClient({ url: config.facilitatorUrl });
+const facilitator = loggingFacilitator(new HTTPFacilitatorClient({ url: config.facilitatorUrl }));
 const resourceServer = registerExactAvmScheme(new x402ResourceServer(facilitator));
 
 function accepts(price: string | ((ctx: HTTPRequestContext) => string)) {
