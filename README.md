@@ -136,10 +136,16 @@ npm run optin-usdca      # opt it into USDC so it can receive payments
 npm run dev              # http://localhost:3402
 ```
 
-Configure via `.env` (see `.env.example`): `NETWORK`, `SELLER_ADDRESS`, `FACILITATOR_URL`,
-`PUBLIC_BASE_URL`, `PORT`. Optional: `ANTHROPIC_API_KEY` for LLM-written verdicts (a
-deterministic template is used otherwise — check `verdict_source` in any response),
-`ETHERSCAN_API_KEY` to enable BSC wallet analysis.
+Configure via `.env` (see `.env.example`):
+
+| Variable | | Purpose |
+|---|---|---|
+| `SELLER_ADDRESS` | required | Algorand address that receives payments |
+| `NETWORK` | required | `mainnet` or `testnet` |
+| `PUBLIC_BASE_URL` | required | Your public URL — agents discover you at this address |
+| `FACILITATOR_URL`, `PORT` | | Default to GoPlausible and 3402 |
+| `ANTHROPIC_API_KEY` | optional | LLM-written verdicts; without it a deterministic template is used |
+| `ETHERSCAN_API_KEY` | optional | Enables BSC wallet analysis (free key) |
 
 ### How it fits together
 
