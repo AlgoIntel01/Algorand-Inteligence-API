@@ -12,7 +12,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsx server.ts"
+    "dev": "tsx server.ts",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -35,5 +36,10 @@
     "@types/node": "^26.1.1",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlgoIntel01/Algorand-Inteligence-API.git",
+    "directory": "mcp"
   }
 }
