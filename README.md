@@ -85,13 +85,15 @@ The fastest way to give an agent these capabilities is the bundled MCP server �
 {
   "mcpServers": {
     "verdict": {
-      "command": "node",
-      "args": ["/path/to/Algorand-Inteligence-API/mcp/dist/server.js"],
+      "command": "npx",
+      "args": ["-y", "verdict-mcp"],
       "env": { "ALGORAND_PRIVATE_KEY": "your 25 word mnemonic" }
     }
   }
 }
 ```
+
+[![npm](https://img.shields.io/npm/v/verdict-mcp)](https://www.npmjs.com/package/verdict-mcp)
 
 Your agent gets `analyze_token`, `analyze_wallet` and `watch_poll` as tools it can call and
 pay for itself, plus free tools for checking its wallet and learning how to fund one. With
@@ -157,7 +159,8 @@ Delivered in phases:
 - **Phase 4 — ✅ `/watch/poll` deltas + funding rail.** Real change detection over watched
   wallets and tokens (wallet activity, risk/liquidity/holder shifts) with shared snapshots
   and per-subscriber cursors; plus the open-source ALGO-in funding rail above.
-- **Phase 5 — Distribution (in progress).** ✅ MCP server ([`mcp/`](mcp/README.md)) so any
-  MCP-compatible agent can call and pay for these tools. Next: publish to npm, agent-framework
-  plugins, and the developer push in x402 / Algorand / agent communities.
+- **Phase 5 — Distribution (in progress).** ✅ MCP server published to npm as
+  [`verdict-mcp`](https://www.npmjs.com/package/verdict-mcp) — one config block and any
+  MCP-compatible agent can call and pay for these tools. Next: agent-framework plugins and
+  the developer push in x402 / Algorand / agent communities.
 - **Phase 6 — Harden & submit.** Monitoring, buffer, competition submission.

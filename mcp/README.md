@@ -24,27 +24,6 @@ Algorand. Payment always settles in USDC on Algorand.
 
 ## Install
 
-**From source (works today):**
-
-```bash
-git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API
-cd Algorand-Inteligence-API/mcp && npm install && npm run build
-```
-
-```json
-{
-  "mcpServers": {
-    "verdict": {
-      "command": "node",
-      "args": ["/absolute/path/to/Algorand-Inteligence-API/mcp/dist/server.js"],
-      "env": { "ALGORAND_PRIVATE_KEY": "your 25 word mnemonic here" }
-    }
-  }
-}
-```
-
-**From npm** (once this package is published):
-
 ```json
 {
   "mcpServers": {
@@ -57,8 +36,8 @@ cd Algorand-Inteligence-API/mcp && npm install && npm run build
 }
 ```
 
-Add the config to your MCP client (Claude Desktop: `claude_desktop_config.json`;
-Claude Code: `.mcp.json`), then restart the client.
+Add that to your MCP client's config (Claude Desktop: `claude_desktop_config.json`;
+Claude Code: `.mcp.json`), then restart the client. Nothing to clone or build.
 
 **No wallet yet?** Install it without the `env` block first — the free tools work
 immediately, and any paid tool will tell you exactly how to get funded. Or jump straight
