@@ -53,14 +53,16 @@ const routes: RoutesConfig = {
     ),
     resource: `${config.baseUrl}/wallet/analyze`,
     description:
-      "Wallet intelligence: risk score, behavioral labels, cluster membership, funding ancestry " +
-      `and an LLM-written verdict. Chains: ${SUPPORTED_CHAINS.join(", ")}. ` +
-      `Append ?depth=deep (${PRICES.walletAnalyzeDeep}) for full graph traversal.`,
+      "Wallet intelligence: risk score, behavioral labels, funding ancestry, co-funding " +
+      "clusters and a verdict. Wallet chains: algorand, ethereum, base (token analysis " +
+      `covers all of ${SUPPORTED_CHAINS.join(", ")}). ` +
+      `Append ?depth=deep (${PRICES.walletAnalyzeDeep}) for multi-hop ancestry + cluster expansion.`,
     mimeType: "application/json",
     unpaidResponseBody: unpaidBody(
       "POST /wallet/analyze",
       `${PRICES.walletAnalyze} (deep: ${PRICES.walletAnalyzeDeep})`,
-      "Judgment call on a wallet: who it moves with, when it enters, what that implies.",
+      "Judgment call on a wallet: funding origin, behavior, cluster membership. " +
+        "Wallet chains: algorand, ethereum, base.",
     ),
     extensions: declareDiscoveryExtension({
       bodyType: "json",
@@ -69,16 +71,27 @@ const routes: RoutesConfig = {
         type: "object",
         properties: {
           address: { type: "string", description: "Wallet address to analyze" },
-          chain: { type: "string", enum: [...SUPPORTED_CHAINS] },
+          chain: {
+            type: "string",
+            enum: ["algorand", "ethereum", "base", "bsc"],
+            description: "Chains with wallet analysis support",
+          },
         },
         required: ["address", "chain"],
       },
       output: {
         example: {
-          risk_score: null,
-          confidence: null,
-          labels: [],
-          cluster: { members: [], funding_ancestry: [], timing_correlation: {} },
+          status: "ok",
+          risk_score: 0.35,
+          confidence: 0.8,
+          labels: ["fresh_funded", "cluster_member"],
+          cluster: {
+            members: ["0xabc...", "0xdef..."],
+            funding_ancestry: [
+              { address: "0x123...", kind: "fresh_eoa", name: null, funded_at: "2026-07-01T00:00:00Z" },
+            ],
+            timing_correlation: {},
+          },
           verdict: "One-paragraph judgment call on the wallet.",
         },
       },
