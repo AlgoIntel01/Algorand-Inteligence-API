@@ -9,9 +9,13 @@ verification and settlement is handled by the
 [GoPlausible facilitator](https://facilitator.goplausible.xyz) with fee abstraction —
 payers need USDCa, not ALGO.
 
-**Status: beta.** Payments, metering and API shapes are live. The heuristics engine is
-not yet wired up; analysis responses return `status: "beta"` with null scores rather
-than fabricated signals.
+**Status: `/token/analyze` is live with real data** (GoPlus for EVM/Solana, Nodely +
+Vestige for Algorand): holder concentration, liquidity, deployer, structural rug signals,
+a deterministic `rug_probability`, and a verdict paragraph (LLM-written when
+`ANTHROPIC_API_KEY` is set, honest template otherwise — see `verdict_source`). Analyses
+are cached (10 min TTL); verdicts regenerate only when the underlying signals change.
+Fields a source can't provide are `null`, never fabricated. `/wallet/analyze` and
+`/watch/poll` remain beta stubs (payments and metering live, heuristics next).
 
 ## Endpoints
 
@@ -76,9 +80,14 @@ Agent → x402 middleware (@x402-avm/hono: 402 challenge → verify → settle)
       → [v2: cache → chain adapters → heuristics → LLM synthesis]
 ```
 
-- `src/index.ts` — Hono app, paywall routes with prices and discovery metadata
+- `src/index.ts` — Hono app, paywall routes with prices and Bazaar discovery metadata
+  (`@x402-avm/extensions/bazaar`, indexed by the facilitator from 402 responses)
 - `src/config.ts` — network constants (mainnet/testnet CAIP-2, USDC ASA IDs)
 - `src/routes/` — `/wallet/analyze`, `/token/analyze`, `/watch/poll`
+- `src/adapters/` — GoPlus (EVM + Solana) and Nodely/Vestige (Algorand) token data
+- `src/analysis/token.ts` — deterministic weighted rug scoring over normalized signals
+- `src/verdict.ts` — verdict synthesis (Anthropic API or template), cached by signals hash
+- `src/cache.ts` — SQLite cache (`data/cache.db`), per-endpoint TTLs
 - `scripts/` — wallet creation (seller + buyer), USDCa opt-in, paying test client;
   shared Algorand helpers in `scripts/algo.ts`
 

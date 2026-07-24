@@ -20,13 +20,17 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.114.0",
     "@hono/node-server": "^2.0.11",
     "@x402-avm/avm": "^2.6.1",
     "@x402-avm/core": "^2.6.1",
+    "@x402-avm/extensions": "^2.6.1",
     "@x402-avm/hono": "^2.6.1",
+    "better-sqlite3": "^13.0.1",
     "hono": "^4.12.31"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.1",
     "@x402-avm/fetch": "^2.6.1",
     "algosdk": "^3.6.0",
