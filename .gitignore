@@ -6,3 +6,6 @@ dist/
 *.mnemonic
 *.log
 .DS_Store
+
+# Private strategy notes — not for the public repo
+docs/ANNOUNCE.md
