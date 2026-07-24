@@ -130,12 +130,6 @@ Vestige for Algorand. Wallet analysis uses Blockscout for EVM chains and Nodely 
 Algorand. Scores are deterministic and the contributing signals are always named, so you can
 see *why* something scored the way it did rather than trusting a number.
 
-## Run your own instance
-
-You don't need to host anything to use Verdict, but the source is all here — `npm install &&
-npm run dev` runs it locally. See **[DEPLOYING.md](DEPLOYING.md)** for wallet setup,
-configuration, deployment and architecture.
-
 ## Support and license
 
 Issues and pull requests welcome at
