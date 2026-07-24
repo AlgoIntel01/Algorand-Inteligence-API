@@ -1,0 +1,39 @@
+{
+  "name": "verdict-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Verdict — cross-chain wallet and token intelligence for AI agents, paid per call in USDC on Algorand via x402",
+  "type": "module",
+  "bin": {
+    "verdict-mcp": "dist/server.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx server.ts"
+  },
+  "keywords": [
+    "mcp",
+    "x402",
+    "algorand",
+    "crypto",
+    "ai-agents",
+    "rug-check"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@x402-avm/avm": "^2.6.1",
+    "@x402-avm/core": "^2.6.1",
+    "@x402-avm/fetch": "^2.6.1",
+    "algosdk": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
+  }
+}

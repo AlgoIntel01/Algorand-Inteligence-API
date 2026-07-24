@@ -1,0 +1,237 @@
+#!/usr/bin/env node
+/**
+ * Verdict MCP server — cross-chain wallet and token intelligence for AI agents,
+ * paid per call in USDC on Algorand via the x402 protocol.
+ *
+ * Configure in any MCP client (Claude Desktop, Claude Code, …):
+ *
+ *   {
+ *     "mcpServers": {
+ *       "verdict": {
+ *         "command": "npx",
+ *         "args": ["-y", "verdict-mcp"],
+ *         "env": { "ALGORAND_PRIVATE_KEY": "<25-word mnemonic>" }
+ *       }
+ *     }
+ *   }
+ *
+ * Without a key the server still runs: the free tools work and the paid tools
+ * explain exactly how to get a funded wallet instead of failing cryptically.
+ */
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+import {
+  API_BASE,
+  PaymentUnavailableError,
+  freeGet,
+  paidPost,
+  walletBalances,
+  walletState,
+} from "./payment.js";
+
+const WALLET_CHAINS = ["algorand", "ethereum", "base"] as const;
+const TOKEN_CHAINS = ["algorand", "ethereum", "base", "bsc", "solana"] as const;
+
+const FUNDING_HELP =
+  "To pay for Verdict calls you need an Algorand wallet holding USDC.\n\n" +
+  "Fastest path — the free funding rail:\n" +
+  "  git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API\n" +
+  "  cd Algorand-Inteligence-API && npm install && npm run fund-agent\n\n" +
+  "It generates a wallet locally, waits for you to send native ALGO from any exchange, " +
+  "opts into USDC, and swaps into USDC — keys never leave your machine. " +
+  "Then set ALGORAND_PRIVATE_KEY to the printed mnemonic in this server's env config.\n\n" +
+  `Full recipe as JSON: ${API_BASE}/fund`;
+
+type ToolResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
+
+const ok = (data: unknown): ToolResult => ({
+  content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
+});
+const fail = (text: string): ToolResult => ({
+  content: [{ type: "text", text }],
+  isError: true,
+});
+
+/** Runs a paid call, turning payment problems into actionable guidance. */
+async function paid(path: string, body: unknown): Promise<ToolResult> {
+  try {
+    return ok(await paidPost(path, body));
+  } catch (err) {
+    if (err instanceof PaymentUnavailableError) {
+      return fail(`Cannot pay for this call.\n\n${err.message}\n\n${FUNDING_HELP}`);
+    }
+    return fail(`Verdict request failed: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+const server = new McpServer({ name: "verdict", version: "0.1.0" });
+
+server.registerTool(
+  "analyze_token",
+  {
+    title: "Analyze token risk",
+    description:
+      "Pre-trade risk check on a token: liquidity depth and lock status, holder concentration, " +
+      "deployer history, a rug_probability score with the specific signals behind it, and a " +
+      "plain-English verdict. Call this before trading any token you have not vetted. " +
+      "Costs $0.05 in USDC, charged automatically.",
+    inputSchema: {
+      asset: z
+        .string()
+        .describe("Token contract address (EVM/Solana) or ASA id (Algorand), e.g. '31566704'"),
+      chain: z.enum(TOKEN_CHAINS).describe("Chain the token lives on"),
+    },
+  },
+  async ({ asset, chain }) => paid("/token/analyze", { asset, chain }),
+);
+
+server.registerTool(
+  "analyze_wallet",
+  {
+    title: "Analyze wallet behavior",
+    description:
+      "Intelligence on a wallet: who funded it (walking the funding chain back toward exchanges " +
+      "or mixers), co-funded sibling wallets, behavioral labels (fresh_funded, mixer_adjacent, " +
+      "layered_funding, bot_like, accumulator…), a risk score with confidence, and a verdict. " +
+      "Call this to vet a counterparty, a token deployer, or a wallet you are considering " +
+      "following. Costs $0.08, or $0.50 with depth='deep' which adds multi-hop funding ancestry " +
+      "and cluster expansion.",
+    inputSchema: {
+      address: z.string().describe("Wallet address to analyze"),
+      chain: z.enum(WALLET_CHAINS).describe("Chain the wallet lives on"),
+      depth: z
+        .enum(["standard", "deep"])
+        .optional()
+        .describe("'deep' ($0.50) adds multi-hop ancestry and co-funding clusters"),
+    },
+  },
+  async ({ address, chain, depth }) =>
+    paid(
+      `/wallet/analyze${depth === "deep" ? "?depth=deep" : ""}`,
+      { address, chain },
+    ),
+);
+
+server.registerTool(
+  "watch_poll",
+  {
+    title: "Poll watched wallets and tokens for changes",
+    description:
+      "Returns everything that changed across a set of watched wallets and tokens since your " +
+      "last poll: wallet activity (transaction counts, largest transfers), token risk changes, " +
+      "liquidity shifts and holder-concentration shifts. Pass the cursor from the previous " +
+      "response to get only new changes; omit it on the first call to establish baselines. " +
+      "Costs $0.01 per poll, including polls that return no changes — you paid for the query.",
+    inputSchema: {
+      watch: z
+        .array(
+          z.object({
+            type: z.enum(["wallet", "token"]),
+            address: z.string().optional().describe("Required when type is 'wallet'"),
+            asset: z.string().optional().describe("Required when type is 'token'"),
+            chain: z.enum(TOKEN_CHAINS),
+          }),
+        )
+        .min(1)
+        .max(100)
+        .describe("Targets to watch (max 100)"),
+      cursor: z
+        .string()
+        .optional()
+        .describe("Cursor from your previous poll; omit on the first call"),
+    },
+  },
+  async ({ watch, cursor }) =>
+    paid("/watch/poll", cursor ? { watch, cursor } : { watch }),
+);
+
+server.registerTool(
+  "check_payment_wallet",
+  {
+    title: "Check the payment wallet",
+    description:
+      "Free. Reports whether a payment wallet is configured, its address, on-chain ALGO and " +
+      "USDC balances, and whether it is opted in to USDC. Use this to diagnose payment problems " +
+      "or to check remaining balance before a run of paid calls.",
+    inputSchema: {},
+  },
+  async () => {
+    const state = walletState();
+    if (!state.configured) {
+      return ok({
+        configured: false,
+        reason: state.reason,
+        how_to_fix: FUNDING_HELP,
+      });
+    }
+    const balances = await walletBalances();
+    const usdc = balances?.usdc ?? null;
+    return ok({
+      configured: true,
+      address: state.address,
+      algo_balance: balances?.algo ?? null,
+      usdc_balance: usdc,
+      opted_in_to_usdc: balances?.optedIn ?? null,
+      can_pay: balances ? balances.optedIn && balances.usdc > 0 : null,
+      approximate_calls_remaining:
+        usdc === null ? null : { watch_poll: Math.floor(usdc / 0.01), token_analyze: Math.floor(usdc / 0.05), wallet_analyze: Math.floor(usdc / 0.08) },
+      ...(balances && !balances.optedIn
+        ? { warning: "Wallet is not opted in to USDC and cannot receive or spend it.", how_to_fix: FUNDING_HELP }
+        : {}),
+    });
+  },
+);
+
+server.registerTool(
+  "get_funding_instructions",
+  {
+    title: "How to fund an agent wallet",
+    description:
+      "Free. Returns step-by-step instructions for getting an Algorand wallet that can pay for " +
+      "x402 services, including the one-command funding rail. Use when payment is unavailable " +
+      "or when setting up for the first time.",
+    inputSchema: {},
+  },
+  async () => {
+    try {
+      const recipe = await freeGet("/fund");
+      return ok({ instructions: FUNDING_HELP, recipe });
+    } catch {
+      return ok({ instructions: FUNDING_HELP });
+    }
+  },
+);
+
+server.registerTool(
+  "get_service_info",
+  {
+    title: "Verdict service info and pricing",
+    description:
+      "Free. Returns the endpoints Verdict offers, their prices, supported chains and payment " +
+      "details. Use to see what is available and what each call costs before spending.",
+    inputSchema: {},
+  },
+  async () => {
+    try {
+      return ok(await freeGet("/"));
+    } catch (err) {
+      return fail(`Could not reach Verdict at ${API_BASE}: ${String(err)}`);
+    }
+  },
+);
+
+async function main(): Promise<void> {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  // stderr only — stdout is the MCP protocol channel and must stay clean.
+  const state = walletState();
+  console.error(
+    `verdict-mcp ready (api: ${API_BASE}, wallet: ${state.configured ? state.address : "not configured — paid tools will explain how to fund one"})`,
+  );
+}
+
+main().catch((err) => {
+  console.error(`verdict-mcp failed to start: ${err instanceof Error ? err.message : String(err)}`);
+  process.exit(1);
+});

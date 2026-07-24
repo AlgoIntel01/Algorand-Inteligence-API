@@ -76,6 +76,28 @@ secret key, so you can paste an existing wallet's recovery phrase instead of gen
 one. The buyer needs ALGO only for the one-time USDCa opt-in; the x402 payment itself is
 gasless via the facilitator's fee abstraction.
 
+## Use it from an AI agent (MCP)
+
+The fastest way to give an agent these capabilities is the bundled MCP server — see
+[`mcp/`](mcp/README.md):
+
+```json
+{
+  "mcpServers": {
+    "verdict": {
+      "command": "node",
+      "args": ["/path/to/Algorand-Inteligence-API/mcp/dist/server.js"],
+      "env": { "ALGORAND_PRIVATE_KEY": "your 25 word mnemonic" }
+    }
+  }
+}
+```
+
+Your agent gets `analyze_token`, `analyze_wallet` and `watch_poll` as tools it can call and
+pay for itself, plus free tools for checking its wallet and learning how to fund one. With
+no key configured the server still runs — paid tools explain how to get funded rather than
+failing, so the on-ramp is discoverable at the moment it's needed.
+
 ## Fund an agent wallet (free public good)
 
 Most AI agents live on Base or Solana and **cannot pay USDCa on Algorand** — it needs an
@@ -135,6 +157,7 @@ Delivered in phases:
 - **Phase 4 — ✅ `/watch/poll` deltas + funding rail.** Real change detection over watched
   wallets and tokens (wallet activity, risk/liquidity/holder shifts) with shared snapshots
   and per-subscriber cursors; plus the open-source ALGO-in funding rail above.
-- **Phase 5 — Distribution.** MCP server and ElizaOS / OpenClaw plugins; get agents
-  integrating and paying.
+- **Phase 5 — Distribution (in progress).** ✅ MCP server ([`mcp/`](mcp/README.md)) so any
+  MCP-compatible agent can call and pay for these tools. Next: publish to npm, agent-framework
+  plugins, and the developer push in x402 / Algorand / agent communities.
 - **Phase 6 — Harden & submit.** Monitoring, buffer, competition submission.
