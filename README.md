@@ -14,8 +14,12 @@ Vestige for Algorand): holder concentration, liquidity, deployer, structural rug
 a deterministic `rug_probability`, and a verdict paragraph (LLM-written when
 `ANTHROPIC_API_KEY` is set, honest template otherwise — see `verdict_source`). Analyses
 are cached (10 min TTL); verdicts regenerate only when the underlying signals change.
-Fields a source can't provide are `null`, never fabricated. `/wallet/analyze` and
-`/watch/poll` remain beta stubs (payments and metering live, heuristics next).
+Fields a source can't provide are `null`, never fabricated.
+
+**`/wallet/analyze` is live with real heuristics** on algorand, ethereum and base:
+funding-ancestry walking, co-funded sibling clusters (`?depth=deep`), behavioral labels
+and a risk score with confidence. `/watch/poll` remains a metered stub (real change
+detection is Phase 4).
 
 ## Endpoints
 
@@ -100,8 +104,11 @@ Delivered in phases:
 - **Phase 2 — ✅ Real `/token/analyze`.** Cross-chain token data (GoPlus for EVM/Solana,
   Nodely + Vestige for Algorand), deterministic rug scoring, LLM/template verdict, SQLite
   cache, Bazaar discovery metadata on every route.
-- **Phase 3 — `/wallet/analyze`.** Port the cluster / precursor-detection heuristics —
-  the product's real edge.
+- **Phase 3 — ✅ Real `/wallet/analyze`.** Funding-ancestry walking (multi-hop at
+  `depth=deep`), co-funded sibling clusters, behavioral labels (fresh_funded,
+  mixer_adjacent, layered_funding, bot_like…), risk score with data-completeness
+  confidence. Wallet chains: algorand, ethereum, base (bsc with an optional free
+  Etherscan key; solana pending).
 - **Phase 4 — `/watch/poll` deltas + funding rail.** Real change detection over watched
   wallets/tokens; ship the CCTP funding-rail CLI (Base/Solana → ready-to-pay Algorand
   wallet) and open-source it.
