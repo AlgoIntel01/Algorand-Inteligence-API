@@ -199,17 +199,31 @@ export interface WatchPollRequest {
   watch: WatchTarget[];
 }
 
+export type WatchChangeType =
+  | "wallet_activity"
+  | "token_risk_change"
+  | "token_liquidity_shift"
+  | "token_holder_shift";
+
 export interface WatchChange {
-  type: string;
+  type: WatchChangeType;
   target: WatchTarget;
   observed_at: string;
   detail: Record<string, unknown>;
 }
 
-export interface WatchPollResponse extends BetaEnvelope {
+export interface WatchWarning {
+  target: WatchTarget;
+  message: string;
+}
+
+export interface WatchPollResponse {
+  status: "ok";
   cursor: string;
   since: string | null;
   now: string;
   watched: number;
   changes: WatchChange[];
+  warnings?: WatchWarning[];
+  note?: string;
 }

@@ -139,8 +139,10 @@ const routes: RoutesConfig = {
     accepts: accepts(PRICES.watchPoll),
     resource: `${config.baseUrl}/watch/poll`,
     description:
-      "Cursor-based delta poll over watched wallets and tokens: whale buys, cluster movements, " +
-      "liquidity and holder shifts since your last poll. Empty deltas still ran the query.",
+      "Cursor-based delta poll over watched wallets and tokens. Change types: wallet_activity " +
+      "(tx count + largest transfer since cursor; algorand/ethereum/base), token_risk_change, " +
+      "token_liquidity_shift, token_holder_shift (~10-min granularity; all five chains). " +
+      "First poll establishes baselines. Empty deltas still ran the query.",
     mimeType: "application/json",
     unpaidResponseBody: unpaidBody(
       "POST /watch/poll",
@@ -178,7 +180,21 @@ const routes: RoutesConfig = {
         required: ["watch"],
       },
       output: {
-        example: { cursor: "eyJ2IjoxLCJ0IjoxNzg0ODg3ODk5NjYyfQ", watched: 1, changes: [] },
+        example: {
+          cursor: "eyJ2IjoxLCJ0IjoxNzg0ODg3ODk5NjYyfQ",
+          watched: 2,
+          changes: [
+            {
+              type: "wallet_activity",
+              target: { type: "wallet", address: "0xabc...", chain: "base" },
+              observed_at: "2026-07-24T12:00:00.000Z",
+              detail: {
+                tx_count_since_cursor: 3,
+                largest_native_transfer: { amount_base_units: "5000000000000000000", direction: "in" },
+              },
+            },
+          ],
+        },
       },
     }),
   },
@@ -204,11 +220,53 @@ app.get("/", (c) =>
       { route: "POST /wallet/analyze?depth=deep", price: PRICES.walletAnalyzeDeep },
       { route: "POST /token/analyze", price: PRICES.tokenAnalyze },
       { route: "POST /watch/poll", price: PRICES.watchPoll },
+      { route: "GET /fund", price: "free", note: "How to get an agent wallet that can pay" },
     ],
     chains: SUPPORTED_CHAINS,
   }),
 );
 app.get("/health", (c) => c.json({ ok: true, network: config.network }));
+
+// Free public good: how to get an agent wallet that can pay x402 services on
+// Algorand. Most agents live on Base/Solana and cannot pay USDCa without this.
+app.get("/fund", (c) =>
+  c.json({
+    title: "Fund an x402 agent wallet on Algorand",
+    why:
+      "Paying USDCa requires an Algorand account, an ASA opt-in for USDC, and a minimum " +
+      "ALGO balance. This recipe gets an agent from zero to ready-to-pay.",
+    cli: {
+      repo: "https://github.com/AlgoIntel01/Algorand-Inteligence-API",
+      command: "npm run fund-agent",
+      flags: {
+        "--json": "machine-readable output for agents",
+        "--dry-run": "quote and verify the swap without submitting",
+        "--resume <file>": "continue with an existing mnemonic file",
+        "--slippage <n>": "swap slippage tolerance (default 0.01)",
+      },
+      steps: [
+        "Generates a fresh Algorand keypair locally (keys never leave your machine).",
+        "You send native ALGO to the printed address from any exchange or wallet.",
+        "Opts the account into USDCa (ASA 31566704).",
+        "Swaps spare ALGO into USDCa via the Vestige aggregator; every transaction is decoded and safety-checked locally before signing.",
+        "Prints a ready-to-pay wallet (address, mnemonic, balances).",
+      ],
+    },
+    manual_alternative:
+      "Withdraw USDC directly to an Algorand address from an exchange that supports the " +
+      "Algorand network, then opt into ASA 31566704 and keep ~0.3 ALGO for reserves and fees.",
+    constants: {
+      network: config.caip2,
+      usdc_asa_id: config.usdcAsaId,
+      recommended_reserve_algo: 0.3,
+      facilitator: config.facilitatorUrl,
+      fee_abstraction:
+        "Payments themselves are gasless — the facilitator covers transaction fees — but the " +
+        "one-time USDCa opt-in requires a small ALGO balance.",
+    },
+    note: "CCTP does not bridge to Algorand, so this rail is ALGO-in plus an on-chain swap.",
+  }),
+);
 
 app.use(paymentMiddleware(routes, resourceServer));
 

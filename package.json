@@ -13,7 +13,8 @@
     "optin-usdca": "tsx scripts/optin-usdca.ts",
     "test-client": "tsx scripts/test-client.ts",
     "create-buyer": "tsx scripts/create-buyer.ts",
-    "optin-buyer": "tsx scripts/optin-buyer.ts"
+    "optin-buyer": "tsx scripts/optin-buyer.ts",
+    "fund-agent": "tsx scripts/fund-agent.ts"
   },
   "keywords": [],
   "author": "",

@@ -2,7 +2,8 @@ import { mkdirSync } from "node:fs";
 import Database from "better-sqlite3";
 
 mkdirSync("data", { recursive: true });
-const db = new Database("data/cache.db");
+/** Shared SQLite handle — cache here; watch snapshots/events in src/watch/store.ts. */
+export const db = new Database("data/cache.db");
 db.pragma("journal_mode = WAL");
 db.exec(
   "CREATE TABLE IF NOT EXISTS cache (key TEXT PRIMARY KEY, value TEXT NOT NULL, expires_at INTEGER NOT NULL)",

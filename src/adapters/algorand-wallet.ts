@@ -49,6 +49,18 @@ async function fetchTxPage(params: string): Promise<Record<string, unknown>[]> {
   return (body.transactions ?? []) as Record<string, unknown>[];
 }
 
+/** All transactions touching an address since a unix time (for /watch/poll). */
+export async function fetchAlgorandTxsSince(
+  address: string,
+  sinceSec: number,
+): Promise<WalletTx[]> {
+  const after = new Date(sinceSec * 1000).toISOString();
+  const rows = await fetchTxPage(
+    `address=${address}&after-time=${encodeURIComponent(after)}`,
+  );
+  return rows.map(toTx);
+}
+
 /** First incoming payment to an address — ancestry hops. */
 export async function fetchAlgorandFirstIncoming(
   address: string,

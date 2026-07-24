@@ -30,6 +30,7 @@ detection is Phase 4).
 | `POST /token/analyze` | $0.05 | Liquidity/locks, holder concentration, deployer history, rug probability, smart money |
 | `POST /watch/poll` | $0.01 | Cursor-based deltas across watched wallets/tokens; every poll is a paid query |
 | `GET /` | free | Service card: endpoints, prices, payment terms |
+| `GET /fund` | free | How to get an agent wallet that can pay on Algorand |
 | `GET /health` | free | Liveness |
 
 Unpaid requests receive `HTTP 402` with the full x402 payment requirements in the
@@ -75,6 +76,28 @@ secret key, so you can paste an existing wallet's recovery phrase instead of gen
 one. The buyer needs ALGO only for the one-time USDCa opt-in; the x402 payment itself is
 gasless via the facilitator's fee abstraction.
 
+## Fund an agent wallet (free public good)
+
+Most AI agents live on Base or Solana and **cannot pay USDCa on Algorand** — it needs an
+Algorand account, an ASA opt-in, and a minimum ALGO balance. This repo ships a free CLI
+that closes that gap for *any* x402 service on Algorand, not just this one:
+
+```bash
+npm run fund-agent              # human mode
+npm run fund-agent -- --json    # machine-readable, for agents
+npm run fund-agent -- --dry-run # quote + safety-check the swap, submit nothing
+```
+
+It generates a keypair locally, waits while you send native ALGO from any exchange or
+wallet, opts the account into USDCa, swaps the spare ALGO into USDCa through the Vestige
+aggregator, and prints a wallet ready to pay. **Keys never leave your machine**, and every
+swap transaction is decoded and checked locally before signing — the CLI refuses to sign
+anything containing a rekey, a close-out, an unreasonable fee, or an unexpected asset.
+
+Note: Circle's CCTP does not bridge to Algorand, so the rail is ALGO-in plus an on-chain
+swap rather than a USDC bridge. `GET /fund` on the live API returns this recipe as JSON so
+agents can discover it programmatically.
+
 ## Architecture
 
 ```
@@ -109,9 +132,9 @@ Delivered in phases:
   mixer_adjacent, layered_funding, bot_like…), risk score with data-completeness
   confidence. Wallet chains: algorand, ethereum, base (bsc with an optional free
   Etherscan key; solana pending).
-- **Phase 4 — `/watch/poll` deltas + funding rail.** Real change detection over watched
-  wallets/tokens; ship the CCTP funding-rail CLI (Base/Solana → ready-to-pay Algorand
-  wallet) and open-source it.
+- **Phase 4 — ✅ `/watch/poll` deltas + funding rail.** Real change detection over watched
+  wallets and tokens (wallet activity, risk/liquidity/holder shifts) with shared snapshots
+  and per-subscriber cursors; plus the open-source ALGO-in funding rail above.
 - **Phase 5 — Distribution.** MCP server and ElizaOS / OpenClaw plugins; get agents
   integrating and paying.
 - **Phase 6 — Harden & submit.** Monitoring, buffer, competition submission.

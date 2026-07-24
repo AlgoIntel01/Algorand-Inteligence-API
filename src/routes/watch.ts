@@ -1,12 +1,15 @@
 import { Hono } from "hono";
 import { parseJsonBody, requireChain, requireString, ValidationError } from "../validate.js";
 import type { WatchPollResponse, WatchTarget } from "../types.js";
+import { processPoll } from "../watch/engine.js";
 
 export const watch = new Hono();
 
-const BETA_NOTE =
-  "Verdict is in beta: cursor metering is live and every poll is a paid query; " +
-  "change detection is not yet wired up, so the delta list is empty by construction, not by observation.";
+const CURSOR_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const BASELINE_NOTE =
+  "First poll: baselines established for your targets; deltas begin from this cursor.";
+const STALE_CURSOR_NOTE =
+  "Cursor older than 24h — token events beyond retention were truncated; wallet activity still covers the full window.";
 
 interface CursorPayload {
   v: 1;
@@ -73,14 +76,22 @@ watch.post("/poll", async (c) => {
   }
 
   const now = Date.now();
+  const sinceMs = cursor?.t ?? null;
+  const { changes, warnings } = await processPoll(targets, sinceMs);
+
   const response: WatchPollResponse = {
-    status: "beta",
-    note: BETA_NOTE,
+    status: "ok",
     cursor: encodeCursor({ v: 1, t: now }),
-    since: cursor ? new Date(cursor.t).toISOString() : null,
+    since: sinceMs !== null ? new Date(sinceMs).toISOString() : null,
     now: new Date(now).toISOString(),
     watched: targets.length,
-    changes: [],
+    changes,
+    ...(warnings.length > 0 ? { warnings } : {}),
+    ...(sinceMs === null
+      ? { note: BASELINE_NOTE }
+      : now - sinceMs > CURSOR_MAX_AGE_MS
+        ? { note: STALE_CURSOR_NOTE }
+        : {}),
   };
   return c.json(response);
 });

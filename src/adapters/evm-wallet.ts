@@ -62,6 +62,21 @@ function toTx(raw: Record<string, unknown>): WalletTx {
   };
 }
 
+/** Transactions touching an address since a unix time (one desc page; for /watch/poll). */
+export async function fetchEvmTxsSince(
+  address: string,
+  chain: Chain,
+  sinceSec: number,
+): Promise<WalletTx[]> {
+  const src = sourceFor(chain);
+  if (!src) return [];
+  const rows = (await query(
+    src,
+    `module=account&action=txlist&address=${address}&sort=desc&page=1&offset=${PAGE_SIZE}`,
+  )) as Record<string, unknown>[];
+  return rows.map(toTx).filter((t) => t.timestamp > sinceSec);
+}
+
 /** First incoming native transfer to an address (one asc page) — ancestry hops. */
 export async function fetchEvmFirstIncoming(
   address: string,
