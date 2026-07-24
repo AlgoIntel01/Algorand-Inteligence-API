@@ -51,13 +51,21 @@ Config lives in `.env` (see `.env.example`): `NETWORK` (mainnet/testnet),
 
 ### Paying a call end-to-end
 
-`scripts/test-client.ts` wraps `fetch` with `@x402-avm/fetch` and pays `/watch/poll`
-with real USDCa. Set `BUYER_PRIVATE_KEY_B64` (base64 secret key or 25-word mnemonic)
-for a wallet that holds USDCa on the configured network, then:
+You need a **buyer** wallet, separate from the seller — never pay your own endpoint
+from the seller account (the contest voids self-payments). Either generate a throwaway
+one or reuse an existing wallet:
 
 ```bash
-npm run test-client
+npm run create-buyer    # generates a buyer keypair into .env (BUYER_PRIVATE_KEY_B64)
+# fund the printed address with ~0.2 ALGO (for the opt-in) + some USDCa (to spend), then:
+npm run optin-buyer     # opt the buyer into USDCa
+npm run test-client     # wraps fetch with @x402-avm/fetch, pays a real $0.01 /watch/poll
 ```
+
+`BUYER_PRIVATE_KEY_B64` accepts either a 25-word mnemonic or a base64-encoded 64-byte
+secret key, so you can paste an existing wallet's recovery phrase instead of generating
+one. The buyer needs ALGO only for the one-time USDCa opt-in; the x402 payment itself is
+gasless via the facilitator's fee abstraction.
 
 ## Architecture
 
@@ -71,7 +79,8 @@ Agent → x402 middleware (@x402-avm/hono: 402 challenge → verify → settle)
 - `src/index.ts` — Hono app, paywall routes with prices and discovery metadata
 - `src/config.ts` — network constants (mainnet/testnet CAIP-2, USDC ASA IDs)
 - `src/routes/` — `/wallet/analyze`, `/token/analyze`, `/watch/poll`
-- `scripts/` — seller wallet creation, USDCa opt-in, paying test client
+- `scripts/` — wallet creation (seller + buyer), USDCa opt-in, paying test client;
+  shared Algorand helpers in `scripts/algo.ts`
 
 ## Roadmap
 

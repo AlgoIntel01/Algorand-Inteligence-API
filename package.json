@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit -p tsconfig.scripts.json",
     "create-wallet": "tsx scripts/create-wallet.ts",
     "optin-usdca": "tsx scripts/optin-usdca.ts",
-    "test-client": "tsx scripts/test-client.ts"
+    "test-client": "tsx scripts/test-client.ts",
+    "create-buyer": "tsx scripts/create-buyer.ts",
+    "optin-buyer": "tsx scripts/optin-buyer.ts"
   },
   "keywords": [],
   "author": "",
