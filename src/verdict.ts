@@ -27,11 +27,15 @@ function shortHash(basis: unknown): string {
  * LLM only runs when the underlying picture actually changes (margin control).
  */
 async function synthesize(
-  cacheKey: string,
+  baseCacheKey: string,
   systemPrompt: string,
   payload: unknown,
   template: () => string,
 ): Promise<VerdictResult> {
+  // Namespace the cache by synthesis mode. Without this, template verdicts cached
+  // while no key was configured would keep being served after a key is added
+  // (for the whole TTL), and vice-versa — the signals hash alone can't tell them apart.
+  const cacheKey = `${baseCacheKey}:${anthropic ? `llm-${VERDICT_MODEL}` : "tpl"}`;
   const cached = getCached<VerdictResult>(cacheKey);
   if (cached) return cached;
 
@@ -64,9 +68,12 @@ async function synthesize(
 
 const TOKEN_SYSTEM_PROMPT =
   "You write one-paragraph pre-trade token risk verdicts for AI trading agents. " +
-  "Be direct and specific: state the risk level, the two or three signals that matter most " +
-  "and why, and what would change the assessment. Base the verdict ONLY on the provided " +
-  "signals — never invent data. 3-5 sentences, no headers, no bullet points, no hedging filler.";
+  "Be direct and specific: say how risky the token is and why, name the two or three signals " +
+  "that matter most, and say what would change the assessment. Base the verdict ONLY on the " +
+  "provided signals — never invent data. " +
+  "Output exactly one paragraph of plain prose, 3-5 sentences. Never use markdown, bold, " +
+  "asterisks, headings, bullet points, or a label line such as 'RISK LEVEL:'. Start directly " +
+  "with the sentence about the token.";
 
 function tokenTemplate(signals: TokenSignals, score: RugScore): string {
   const name = signals.symbol ?? signals.name ?? `asset ${signals.asset}`;
@@ -130,7 +137,7 @@ const WALLET_SYSTEM_PROMPT =
   "to trust or follow a counterparty wallet. Be direct: state what kind of actor this wallet " +
   "looks like, the two or three behavioral signals that matter most (funding origin, age, " +
   "activity pattern, cluster membership), and the confidence caveats. Base the verdict ONLY on " +
-  "the provided signals — never invent data. 3-5 sentences, no headers, no bullets, no filler.";
+  "the provided signals — never invent data. 3-5 sentences of plain prose — no markdown, headers, bullets, or filler.";
 
 function walletTemplate(analysis: WalletAnalysis): string {
   const { signals, score } = analysis;
