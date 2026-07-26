@@ -22,9 +22,24 @@ const algodUrl =
     ? "https://mainnet-api.algonode.cloud"
     : "https://testnet-api.algonode.cloud";
 
-const keyInput = process.env.BUYER_PRIVATE_KEY_B64;
+// One key slot per network. Sharing a single slot means switching networks
+// requires overwriting the other network's wallet, and a mainnet run that
+// silently falls back to a testnet key is a real-money mistake waiting to
+// happen. MAINNET_BUYER_KEY and TESTNET_BUYER_KEY are preferred; the original
+// BUYER_PRIVATE_KEY_B64 still works as a fallback for existing setups.
+const keyVar = network === "mainnet" ? "MAINNET_BUYER_KEY" : "TESTNET_BUYER_KEY";
+const keyInput = process.env[keyVar] ?? process.env.BUYER_PRIVATE_KEY_B64;
 if (!keyInput) {
-  console.error("BUYER_PRIVATE_KEY_B64 is not set. Provide a base64 secret key or 25-word mnemonic.");
+  console.error(`No buyer key for ${network}. Set ${keyVar} in .env`);
+  console.error("(a 25-word mnemonic or base64 secret key), or BUYER_PRIVATE_KEY_B64 as a fallback.");
+  process.exit(1);
+}
+
+// A mainnet run moves real USDC. Require saying so out loud.
+if (network === "mainnet" && !process.argv.includes("--real")) {
+  console.error("This would spend REAL USDC on Algorand mainnet.");
+  console.error("Re-run with --real if that is what you intend:");
+  console.error("  NETWORK=mainnet npm run test-client -- --real");
   process.exit(1);
 }
 const privateKeyB64 = keyInput.trim().includes(" ")

@@ -38,9 +38,9 @@ if (process.env.NETWORK !== "testnet") {
   process.exit(1);
 }
 
-const buyerKey = process.env.BUYER_PRIVATE_KEY_B64?.trim();
+const buyerKey = (process.env.TESTNET_BUYER_KEY ?? process.env.BUYER_PRIVATE_KEY_B64)?.trim();
 if (!buyerKey) {
-  console.error("BUYER_PRIVATE_KEY_B64 is empty — run `npm run create-buyer` first.");
+  console.error("No testnet buyer key — set TESTNET_BUYER_KEY, or run `npm run create-buyer`.");
   process.exit(1);
 }
 
