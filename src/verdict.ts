@@ -1,16 +1,11 @@
-import "./config.js"; // ensures .env is loaded before we read process.env
 import { createHash } from "node:crypto";
-import Anthropic from "@anthropic-ai/sdk";
 import type { RugScore } from "./analysis/token.js";
 import type { WalletAnalysis } from "./analysis/wallet.js";
 import type { TokenSignals } from "./types.js";
 import { getCached, setCached } from "./cache.js";
+import { anthropic, VERDICT_MODEL } from "./llm.js";
 
-const VERDICT_MODEL = process.env.VERDICT_MODEL ?? "claude-haiku-4-5";
 const VERDICT_CACHE_TTL_SECONDS = 24 * 60 * 60; // keyed by signals hash, so safe to keep long
-
-const apiKey = process.env.ANTHROPIC_API_KEY;
-const anthropic = apiKey ? new Anthropic({ apiKey }) : null;
 
 export interface VerdictResult {
   verdict: string;
