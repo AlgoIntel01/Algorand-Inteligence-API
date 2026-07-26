@@ -14,7 +14,8 @@
     "test-client": "tsx scripts/test-client.ts",
     "create-buyer": "tsx scripts/create-buyer.ts",
     "optin-buyer": "tsx scripts/optin-buyer.ts",
-    "fund-agent": "tsx scripts/fund-agent.ts"
+    "fund-agent": "tsx scripts/fund-agent.ts",
+    "benchmark": "tsx scripts/benchmark.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
     "@x402-avm/core": "^2.6.1",
     "@x402-avm/extensions": "^2.6.1",
     "@x402-avm/hono": "^2.6.1",
+    "algosdk": "^3.6.0",
     "better-sqlite3": "^13.0.1",
     "hono": "^4.12.31"
   },
@@ -34,7 +36,6 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^26.1.1",
     "@x402-avm/fetch": "^2.6.1",
-    "algosdk": "^3.6.0",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   },

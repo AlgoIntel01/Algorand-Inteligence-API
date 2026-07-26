@@ -190,6 +190,49 @@ export interface TokenAnalyzeResponse {
   cached: boolean;
 }
 
+/** One asset's net movement for an account across a transaction group. */
+export interface TxFlow {
+  asset_id: number;
+  name: string | null;
+  unit: string | null;
+  decimals: number | null;
+  /** Signed decimal string in whole units. Negative means it left the account. */
+  amount: string;
+  amount_base_units: string;
+  usd_value: number | null;
+}
+
+export interface TxExplainResponse {
+  status: "ok";
+  txid: string;
+  chain: "algorand";
+  confirmed_round: number | null;
+  timestamp: string | null;
+  group_id: string | null;
+  group_size: number;
+  /** What the net flows say happened, not what the app claims to be. */
+  kind: "swap" | "send" | "receive" | "app_interaction" | "multi_asset";
+  summary: string;
+  initiator: string | null;
+  net_flows: TxFlow[];
+  applications: number[];
+  application: { id: number; name: string; url: string } | null;
+  rate: {
+    /** Units of the received asset obtained per unit of the asset sent. */
+    effective: number;
+    market: number | null;
+    /** Signed fraction: how far the realised rate sat from the market rate. */
+    deviation: number | null;
+    note: string;
+  } | null;
+  fees: { total_algo: number; transactions: number };
+  pricing: { basis: "candle_at_block_time" | "spot" | "unavailable"; note: string };
+  safety_flags: string[];
+  checks_run: string[];
+  data_source: string;
+  cached: boolean;
+}
+
 export type WatchTarget =
   | { type: "wallet"; address: string; chain: Chain }
   | { type: "token"; asset: string; chain: Chain };
