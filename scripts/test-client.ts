@@ -62,7 +62,11 @@ const res = await fetchWithPay(`${apiUrl}/watch/poll`, {
 });
 
 console.log(`HTTP ${res.status}`);
-const paymentResponse = res.headers.get("X-PAYMENT-RESPONSE");
+// The AVM server sends `payment-response`; the x- prefixed spelling appears in
+// other x402 implementations. Accept either so a real settlement is never
+// reported as if it had not happened.
+const paymentResponse =
+  res.headers.get("payment-response") ?? res.headers.get("x-payment-response");
 if (paymentResponse) {
   console.log(`X-PAYMENT-RESPONSE: ${Buffer.from(paymentResponse, "base64").toString("utf8")}`);
 }

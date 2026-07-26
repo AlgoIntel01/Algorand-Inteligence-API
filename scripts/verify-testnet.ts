@@ -108,6 +108,18 @@ if (blockers.length > 0) {
   process.exit(1);
 }
 
+// Settlement publishes whatever resource URL the server advertises into the
+// public Bazaar catalog — permanently, as far as we can tell. A server running
+// with PUBLIC_BASE_URL=http://localhost:3402 therefore lists localhost resources
+// under your merchant id. Say so before spending, rather than after.
+const advertised = process.env.PUBLIC_BASE_URL ?? "http://localhost:3402";
+if (/localhost|127\.0\.0\.1/.test(advertised)) {
+  console.warn(`WARNING: this server advertises ${advertised}`);
+  console.warn("Settling will publish those localhost URLs to the public Bazaar catalog.");
+  console.warn("They are tagged testnet, but they are unreachable and cannot easily be removed.");
+  console.warn("Set PUBLIC_BASE_URL to a reachable URL first if that matters to you.\n");
+}
+
 const client = new x402Client().register(
   ALGORAND_TESTNET_CAIP2,
   new ExactAvmScheme(signer, { algodUrl: ALGOD }),
