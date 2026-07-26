@@ -348,8 +348,10 @@ check without submitting anything.
 
 Token analysis draws on GoPlus for EVM chains and Solana, and the Nodely indexer plus
 Vestige for Algorand. Wallet analysis uses Blockscout for EVM chains and Nodely for
-Algorand. The verdict prose is written by Claude from those signals and cached against a hash of
-them, so the model runs only when the underlying picture actually changes.
+Algorand. The `verdict` field each response returns is written by Claude from those signals and
+cached against a hash of them, so the model runs only when the underlying picture actually
+changes. `verdict_source` tells you which one you got: `llm`, or the deterministic template that
+takes over when no model is configured or the model call fails.
 
 ## Support and license
 
