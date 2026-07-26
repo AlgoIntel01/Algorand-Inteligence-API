@@ -30,6 +30,15 @@ const resourceServer = registerExactAvmScheme(new x402ResourceServer(facilitator
 // facilitator extracts and catalogs, so agents can find these endpoints.
 resourceServer.registerExtension(bazaarResourceServerExtension);
 
+/**
+ * The Global x402 Challenge requires a `tag` field inside `extra` on every paid
+ * route so entries can be identified. The AVM scheme also writes `extra` (asset
+ * name, decimals, and the facilitator's feePayer, which is what makes payments
+ * gasless), so this must merge with those rather than replace them — verify the
+ * decoded payment-required header still carries feePayer after any change here.
+ */
+const CHALLENGE_TAG = "x402-global-challenge";
+
 function accepts(price: string | ((ctx: HTTPRequestContext) => string)) {
   return {
     scheme: "exact",
@@ -37,6 +46,7 @@ function accepts(price: string | ((ctx: HTTPRequestContext) => string)) {
     payTo: config.sellerAddress,
     price,
     maxTimeoutSeconds: 120,
+    extra: { tag: CHALLENGE_TAG },
   };
 }
 
