@@ -15,7 +15,8 @@
     "create-buyer": "tsx scripts/create-buyer.ts",
     "optin-buyer": "tsx scripts/optin-buyer.ts",
     "fund-agent": "tsx scripts/fund-agent.ts",
-    "benchmark": "tsx scripts/benchmark.ts"
+    "benchmark": "tsx scripts/benchmark.ts",
+    "verify-testnet": "tsx scripts/verify-testnet.ts"
   },
   "keywords": [],
   "author": "",
