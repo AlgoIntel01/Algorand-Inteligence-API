@@ -1,0 +1,8 @@
+{
+  "name": "verdict-example-ai-agent",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "verdict-sdk": "file:../../sdk/ts"
+  }
+}
