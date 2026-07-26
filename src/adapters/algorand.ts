@@ -1,9 +1,8 @@
 import type { TokenSignals } from "../types.js";
 import { AdapterError } from "./goplus.js";
+import { fetchAssetPrice } from "./vestige.js";
 
 const INDEXER = "https://mainnet-idx.algonode.cloud";
-const VESTIGE = "https://api.vestigelabs.org";
-const USDC_ASA = 31566704;
 // algosdk.encodeAddress(new Uint8Array(32)) — a key set to this is effectively removed
 const ZERO_ADDR = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ";
 
@@ -17,29 +16,6 @@ async function getJson(url: string, upstream: string): Promise<Record<string, un
   if (res.status === 404) throw new AdapterError(`asset not found on ${upstream}`, upstream);
   if (!res.ok) throw new AdapterError(`${upstream} returned HTTP ${res.status}`, upstream);
   return (await res.json()) as Record<string, unknown>;
-}
-
-interface VestigePrice {
-  price: number;
-  confidence: number;
-  total_lockup: number;
-}
-
-/** Price + TVL denominated in USDC. Returns null when Vestige doesn't track the asset. */
-async function fetchVestige(assetId: number): Promise<VestigePrice | null> {
-  try {
-    const body = (await getJson(
-      `${VESTIGE}/assets/price?asset_ids=${assetId}&network_id=0&denominating_asset_id=${USDC_ASA}`,
-      "vestige",
-    )) as unknown as VestigePrice[];
-    const entry = Array.isArray(body) ? body[0] : undefined;
-    if (!entry || typeof entry.price !== "number") return null;
-    return entry;
-  } catch {
-    // Liquidity data is enrichment, not the core of the analysis — degrade to nulls
-    // rather than failing a paid call over a secondary source.
-    return null;
-  }
 }
 
 const PAGE_LIMIT = 1000;
@@ -132,7 +108,7 @@ export async function fetchAlgorandSignals(asset: string): Promise<TokenSignals 
   if (params["default-frozen"] === true) flags.push("default_frozen");
 
   const [vestige, holders] = await Promise.all([
-    fetchVestige(assetId),
+    fetchAssetPrice(assetId),
     fetchHolders(assetId, creator, reserve),
   ]);
   if (vestige && vestige.confidence < 0.5) flags.push("low_price_confidence");
