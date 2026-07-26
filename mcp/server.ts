@@ -65,7 +65,7 @@ async function paid(path: string, body: unknown): Promise<ToolResult> {
   }
 }
 
-const server = new McpServer({ name: "verdict", version: "0.1.0" });
+const server = new McpServer({ name: "verdict", version: "0.2.0" });
 
 server.registerTool(
   "analyze_token",
@@ -144,6 +144,159 @@ server.registerTool(
   },
   async ({ watch, cursor }) =>
     paid("/watch/poll", cursor ? { watch, cursor } : { watch }),
+);
+
+server.registerTool(
+  "explain_transaction",
+  {
+    title: "Explain an Algorand transaction",
+    description:
+      "Plain-language explanation of what one committed Algorand transaction did: net asset " +
+      "movement for the sender across the entire atomic group and every inner transaction, the " +
+      "protocol where attributable, fees, the realised rate against the pre-trade market rate, " +
+      "and named safety checks. Costs $0.02. Note: a transaction that FAILED was never written " +
+      "to the ledger and cannot be explained afterwards — use simulate_transaction beforehand " +
+      "instead.",
+    inputSchema: {
+      txid: z.string().describe("52-character Algorand transaction id"),
+    },
+  },
+  async ({ txid }) => paid("/tx/explain", { txid }),
+);
+
+server.registerTool(
+  "simulate_transaction",
+  {
+    title: "Check whether a transaction would fail, before signing",
+    description:
+      "Runs an unsigned Algorand transaction group against current chain state without " +
+      "submitting it, and reports whether it would succeed plus the exact evaluation error and " +
+      "which transaction failed. This is the only way to find out why a transaction fails: " +
+      "failed transactions never reach the ledger, so they cannot be diagnosed after the fact. " +
+      "Costs $0.02.",
+    inputSchema: {
+      txns: z
+        .array(z.string())
+        .min(1)
+        .max(16)
+        .describe("Atomic group in order, each a base64-encoded transaction; unsigned is normal"),
+    },
+  },
+  async ({ txns }) => paid("/tx/simulate", { txns }),
+);
+
+server.registerTool(
+  "discover",
+  {
+    title: "Discover what is moving on Algorand",
+    description:
+      "The discovery feed: new_launches (newest assets that actually hold liquidity), trending " +
+      "(most swapped in 24h), volume_growth (24h volume against the asset's own 7-day average), " +
+      "liquidity_moves (TVL change against an hourly baseline), fresh_lps (pools created " +
+      "recently) and trending_protocols. Omit signals to get all of them. Costs $0.03.",
+    inputSchema: {
+      signals: z
+        .array(
+          z.enum([
+            "new_launches",
+            "trending",
+            "volume_growth",
+            "liquidity_moves",
+            "fresh_lps",
+            "trending_protocols",
+          ]),
+        )
+        .optional()
+        .describe("Omit for every signal"),
+      limit: z.number().int().min(1).max(50).optional().describe("Results per signal (default 10)"),
+    },
+  },
+  async ({ signals, limit }) => paid("/discover", { signals, limit }),
+);
+
+server.registerTool(
+  "get_portfolio",
+  {
+    title: "Value an Algorand address",
+    description:
+      "What an address holds and what it is worth: balances straight from the chain, USD " +
+      "valuation and allocation per position, LP positions, and 30-day buy/sell flows on the " +
+      "largest holdings. Assets that cannot be priced keep their balance and report a null " +
+      "value rather than being dropped. Costs $0.04.",
+    inputSchema: {
+      address: z.string().describe("Algorand address"),
+    },
+  },
+  async ({ address }) => paid("/portfolio", { address }),
+);
+
+server.registerTool(
+  "smart_money",
+  {
+    title: "See who is trading an Algorand asset",
+    description:
+      "The wallets behind the largest swaps of an asset in a window, with buy and sell volume, " +
+      "average buy against average sell price, holding period and current position. Ranks by " +
+      "size, not by proven skill. Read the methodology field in the response before quoting any " +
+      "number from it. Costs $0.10.",
+    inputSchema: {
+      asset: z.string().describe("Algorand ASA id; 0 for native ALGO"),
+      window_days: z.number().int().min(1).max(90).optional().describe("Lookback (default 7)"),
+      limit: z.number().int().min(1).max(25).optional().describe("Traders returned (default 10)"),
+    },
+  },
+  async ({ asset, window_days, limit }) => paid("/smart-money", { asset, window_days, limit }),
+);
+
+server.registerTool(
+  "analyze_contract",
+  {
+    title: "Analyze an Algorand application",
+    description:
+      "Application intelligence: creator, privileged addresses decoded out of global state, " +
+      "state schemas, TEAL version, which OnCompletion types the approval program explicitly " +
+      "tests for, and the TVL held in the application account. audit_status and methods are " +
+      "always null — Algorand has no audit registry and applications carry no on-chain ABI. " +
+      "Costs $0.05.",
+    inputSchema: {
+      app_id: z.string().describe("Algorand application id"),
+    },
+  },
+  async ({ app_id }) => paid("/contract/analyze", { app_id }),
+);
+
+server.registerTool(
+  "get_reputation",
+  {
+    title: "Standing score for an Algorand address",
+    description:
+      "A cheap, cacheable trust score with every weighted component published alongside it " +
+      "(age, activity, counterparty spread, NFDomains identity, holdings, recency), a penalty " +
+      "when the account is rekeyed to another key, and known burn or mixer addresses flagged " +
+      "outright. Lighter and cheaper than analyze_wallet: no funding ancestry or clustering. " +
+      "Costs $0.02.",
+    inputSchema: {
+      address: z.string().describe("Algorand address"),
+    },
+  },
+  async ({ address }) => paid("/reputation", { address }),
+);
+
+server.registerTool(
+  "ask",
+  {
+    title: "Ask anything about on-chain activity",
+    description:
+      "A question in plain language, routed across token, wallet, transaction, discovery, " +
+      "portfolio, smart-money, contract and reputation intelligence, and answered only from what " +
+      "those capabilities returned. The structured results come back attached to the prose so " +
+      "every figure can be checked against its source. Use this when you do not know which " +
+      "specific tool you need. Costs $0.12.",
+    inputSchema: {
+      question: z.string().max(500).describe("Plain-language question, 500 characters max"),
+    },
+  },
+  async ({ question }) => paid("/ask", { question }),
 );
 
 server.registerTool(

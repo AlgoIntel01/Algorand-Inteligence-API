@@ -1,7 +1,7 @@
 {
   "name": "verdict-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for Verdict — cross-chain wallet and token intelligence for AI agents, paid per call in USDC on Algorand via x402",
+  "version": "0.2.0",
+  "description": "MCP server for Verdict \u2014 the blockchain intelligence layer for AI agents: token, wallet, transaction, discovery, portfolio, smart-money, contract and reputation intelligence, paid per call in USDC on Algorand via x402",
   "type": "module",
   "bin": {
     "verdict-mcp": "dist/server.js"
