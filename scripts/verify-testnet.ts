@@ -164,7 +164,11 @@ for (const testCase of cases) {
       body: JSON.stringify(testCase.body),
     });
     status = res.status;
-    const header = res.headers.get("X-PAYMENT-RESPONSE");
+    // The AVM server emits `payment-response`; the x-prefixed spelling appears in
+    // other x402 implementations, so accept either rather than silently reporting
+    // "no settlement" on a payment that in fact settled.
+    const header =
+      res.headers.get("payment-response") ?? res.headers.get("x-payment-response");
     if (header) {
       try {
         const decoded = JSON.parse(Buffer.from(header, "base64").toString("utf8")) as {
