@@ -26,6 +26,16 @@ export const config = {
 
 export const PRICES = {
   watchPoll: "$0.01",
+  // A committed transaction never changes, so an explanation is cached forever
+  // and the second caller for a given txid costs us nothing upstream.
+  txExplain: "$0.02",
+  txSimulate: "$0.02",
+  reputation: "$0.02",
+  discover: "$0.03",
+  portfolio: "$0.04",
+  smartMoney: "$0.10",
+  ask: "$0.12",
+  contractAnalyze: "$0.05",
   tokenAnalyze: "$0.05",
   walletAnalyze: "$0.08",
   walletAnalyzeDeep: "$0.50",

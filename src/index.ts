@@ -13,6 +13,14 @@ import { assertConfig, config, PRICES, SUPPORTED_CHAINS } from "./config.js";
 import { wallet } from "./routes/wallet.js";
 import { token } from "./routes/token.js";
 import { watch } from "./routes/watch.js";
+import { tx } from "./routes/tx.js";
+import { discovery } from "./routes/discover.js";
+import { portfolio } from "./routes/portfolio.js";
+import { smartMoney } from "./routes/smart-money.js";
+import { contract } from "./routes/contract.js";
+import { reputation } from "./routes/reputation.js";
+import { askRoute } from "./routes/ask.js";
+import { hasLlm } from "./llm.js";
 
 assertConfig();
 
@@ -102,12 +110,12 @@ const routes: RoutesConfig = {
     resource: `${config.baseUrl}/token/analyze`,
     description:
       "Pre-trade token check: liquidity depth and locks, holder concentration, deployer history, " +
-      `rug probability with driving signals, smart-money positioning. Chains: ${SUPPORTED_CHAINS.join(", ")}.`,
+      `rug probability with driving signals. Chains: ${SUPPORTED_CHAINS.join(", ")}.`,
     mimeType: "application/json",
     unpaidResponseBody: unpaidBody(
       "POST /token/analyze",
       PRICES.tokenAnalyze,
-      "Rug check and smart-money read on any token before an agent trades it.",
+      "Rug check on any token before an agent trades it.",
     ),
     extensions: declareDiscoveryExtension({
       bodyType: "json",
@@ -131,6 +139,341 @@ const routes: RoutesConfig = {
           liquidity: { depth_usd: 1779250, lock_status: "unknown", lock_expiry: null },
           holders: { count: 3421, top_10_concentration: 0.34, insider_overlap: null },
           verdict: "One-paragraph pre-trade risk verdict.",
+        },
+      },
+    }),
+  },
+  "POST /tx/explain": {
+    accepts: accepts(PRICES.txExplain),
+    resource: `${config.baseUrl}/tx/explain`,
+    description:
+      "Plain-language explanation of one Algorand transaction: net asset movement for the " +
+      "sender across the whole atomic group and its inner transactions, the protocol it went " +
+      "through where attributable, fees, realised rate versus the pre-trade market rate, " +
+      "and named safety checks. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /tx/explain",
+      PRICES.txExplain,
+      "What actually happened in a transaction, in one sentence plus the numbers behind it.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { txid: "FPGSILQHO2KB5VLPV7YF73ZXL4PSCAZFYSSIET7H5LUVOSG2DTTQ" },
+      inputSchema: {
+        type: "object",
+        properties: {
+          txid: { type: "string", description: "Algorand transaction id (52-character base32)" },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+        required: ["txid"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          kind: "swap",
+          summary:
+            "Swapped 20,000 ALGO for 25,233,733,648.0667 SHIP routed across 9 applications. " +
+            "Network fee 0.063 ALGO across 14 transactions. Realised rate sat 17.97% below the " +
+            "pre-trade market rate, fees and price impact included. Flagged: unattributed_application.",
+          net_flows: [
+            { asset_id: 0, unit: "ALGO", amount: "-20000", usd_value: -1690.47 },
+            { asset_id: 3109829078, unit: "SHIP", amount: "25233733648.066692", usd_value: 1991.61 },
+          ],
+          fees: { total_algo: 0.063, transactions: 14 },
+          safety_flags: ["unattributed_application"],
+        },
+      },
+    }),
+  },
+  "POST /tx/simulate": {
+    accepts: accepts(PRICES.txSimulate),
+    resource: `${config.baseUrl}/tx/simulate`,
+    description:
+      "Pre-flight check: run an unsigned Algorand transaction group against current chain state " +
+      "without submitting it, and get back whether it would succeed plus the exact evaluation " +
+      "error and the index that failed. This is the only way to answer 'why does my transaction " +
+      "fail' — failed transactions are never written to the ledger, so they cannot be inspected " +
+      "afterwards. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /tx/simulate",
+      PRICES.txSimulate,
+      "Would this transaction fail, and why — before you sign it.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { txns: ["base64-encoded unsigned transaction"] },
+      inputSchema: {
+        type: "object",
+        properties: {
+          txns: {
+            type: "array",
+            maxItems: 16,
+            items: { type: "string" },
+            description:
+              "Atomic group in order, each a base64-encoded Algorand transaction. Unsigned is " +
+              "the normal case (algosdk encodeUnsignedTransaction); signed blobs are accepted too.",
+          },
+        },
+        required: ["txns"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          would_succeed: false,
+          failure_summary: "overspend",
+          failure_reason:
+            "transaction QRLROOJM…: overspend (account MGVUZWD2…, tried to spend 1000000A)",
+          failed_at: 0,
+          group_size: 1,
+          fees: { total_algo: 0.001 },
+        },
+      },
+    }),
+  },
+  "POST /discover": {
+    accepts: accepts(PRICES.discover),
+    resource: `${config.baseUrl}/discover`,
+    description:
+      "Discovery feed for Algorand DeFi. Signals: new_launches (newest assets above a liquidity " +
+      "floor), trending (most swapped in 24h), volume_growth (24h volume against the asset's own " +
+      "7-day average), liquidity_moves (TVL change against our hourly snapshot), fresh_lps " +
+      "(newest pools with protocol and pair), trending_protocols (24h volume by protocol). " +
+      "Post an empty body for all of them. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /discover",
+      PRICES.discover,
+      "What is launching, trending, and moving on Algorand right now.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { signals: ["trending", "new_launches"], limit: 10 },
+      inputSchema: {
+        type: "object",
+        properties: {
+          signals: {
+            type: "array",
+            items: {
+              type: "string",
+              enum: [
+                "new_launches",
+                "trending",
+                "volume_growth",
+                "liquidity_moves",
+                "fresh_lps",
+                "trending_protocols",
+              ],
+            },
+            description: "Omit for every signal",
+          },
+          limit: { type: "integer", description: "Results per signal, 1-50 (default 10)" },
+          created_after: {
+            type: "integer",
+            description: "Unix seconds; restricts new_launches to assets created after this",
+          },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+      },
+      output: {
+        example: {
+          status: "ok",
+          chain: "algorand",
+          signals: {
+            trending: [
+              {
+                asset_id: 0,
+                ticker: "ALGO",
+                tvl_usd: 59191833,
+                volume_1d_usd: 173083.7,
+                measure: { label: "swaps_1d", value: 16323 },
+              },
+            ],
+          },
+        },
+      },
+    }),
+  },
+  "POST /portfolio": {
+    accepts: accepts(PRICES.portfolio),
+    resource: `${config.baseUrl}/portfolio`,
+    description:
+      "What an Algorand address holds and what it is worth: balances from the chain, USD " +
+      "valuation and allocation per position, LP positions, and 30-day buy/sell flows for the " +
+      "largest holdings. Assets that cannot be priced keep their balance and report a null " +
+      "value rather than being dropped. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /portfolio",
+      PRICES.portfolio,
+      "Holdings, valuation, allocation, LP positions and recent trade flows for one address.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { address: "PV3QMHIOZ6X7246YBAI66XUALSTT6UCSLJQE4YVQS6TQWG33N4BIBAZANM" },
+      inputSchema: {
+        type: "object",
+        properties: {
+          address: { type: "string", description: "Algorand address" },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+        required: ["address"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          total_value_usd: 5301.74,
+          priced_holdings: 4,
+          unpriced_holdings: 1,
+          holdings: [
+            {
+              asset_id: 0,
+              ticker: "ALGO",
+              amount: 3570.3,
+              price_usd: 0.0845,
+              value_usd: 301.69,
+              allocation: 0.0569,
+              flows_30d: { bought_usd: 0, sold_usd: 1992.76, net_usd: 1992.76 },
+            },
+          ],
+          lp_positions: [],
+        },
+      },
+    }),
+  },
+  "POST /smart-money": {
+    accepts: accepts(PRICES.smartMoney),
+    resource: `${config.baseUrl}/smart-money`,
+    description:
+      "Who is moving an asset: the wallets behind the largest swaps in a window, each with buy " +
+      "and sell volume, average buy against average sell price, holding period and current " +
+      "position. Every sampled trade is resolved back to the wallet that initiated it, because " +
+      "an aggregator-routed swap reports the router as its executor. Ranks by size, not by " +
+      "proven skill, and says so. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /smart-money",
+      PRICES.smartMoney,
+      "The wallets actually moving an asset, with the methodology stated alongside the numbers.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { asset: "3109829078", window_days: 7, limit: 10 },
+      inputSchema: {
+        type: "object",
+        properties: {
+          asset: { type: "string", description: "Algorand ASA id; 0 for native ALGO" },
+          window_days: { type: "integer", description: "Lookback window, 1-90 (default 7)" },
+          limit: { type: "integer", description: "Traders returned, 1-25 (default 10)" },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+        required: ["asset"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          asset_id: 3109829078,
+          asset_ticker: "SHIP",
+          window_days: 7,
+          traders: [
+            {
+              address: "PV3QMHIO...",
+              routed: true,
+              bought_usd: 1992.76,
+              sold_usd: 0,
+              avg_buy_price_usd: 7.89e-8,
+              round_trip_roi: null,
+              current_position: 63318279493.47,
+            },
+          ],
+          cohort: { traders_ranked: 10, with_computable_roi: 4, win_rate: 0.5, median_roi: 0.02 },
+        },
+      },
+    }),
+  },
+  "POST /contract/analyze": {
+    accepts: accepts(PRICES.contractAnalyze),
+    resource: `${config.baseUrl}/contract/analyze`,
+    description:
+      "Application intelligence: creator, global state with privileged addresses decoded, state " +
+      "schemas, TEAL version, which OnCompletion types the approval program explicitly tests, " +
+      "and the TVL sitting in the application account. audit_status and methods are always null " +
+      "— Algorand has no audit registry and applications carry no on-chain ABI. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /contract/analyze",
+      PRICES.contractAnalyze,
+      "What an Algorand application controls, who can change it, and what it holds.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { app_id: "1002541853" },
+      inputSchema: {
+        type: "object",
+        properties: {
+          app_id: { type: "string", description: "Algorand application id" },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+        required: ["app_id"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          app_id: 1002541853,
+          app_account: "XSKED5VKZZCSYNDWXZJI65JM2HP7HZFJWCOBIMOONKHTK5UVKENBNVDEYM",
+          privileged_addresses: [
+            { key: "fee_setter", address: "ZWJVXVXCC7DYAFYCASOEHDLZ..." },
+          ],
+          program: {
+            teal_version: 7,
+            on_completion_tested: { update_application: true, delete_application: true },
+          },
+          audit_status: null,
+          methods: null,
+          risk_flags: ["privileged_addresses_in_global_state"],
+        },
+      },
+    }),
+  },
+  "POST /reputation": {
+    accepts: accepts(PRICES.reputation),
+    resource: `${config.baseUrl}/reputation`,
+    description:
+      "A cheap, cacheable standing score for an Algorand address, built for wallets and explorers " +
+      "to embed next to an address. Weighted components (age, activity, counterparty spread, " +
+      "NFDomains identity, holdings, recency) are published with the score, along with a rekey " +
+      "penalty when the account is signed for by another key. Lighter than /wallet/analyze: no " +
+      "funding ancestry, no cluster expansion. Algorand only.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /reputation",
+      PRICES.reputation,
+      "Standing score for an address, with every component that produced it named.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { address: "PV3QMHIOZ6X7246YBAI66XUALSTT6UCSLJQE4YVQS6TQWG33N4BIBAZANM" },
+      inputSchema: {
+        type: "object",
+        properties: {
+          address: { type: "string", description: "Algorand address" },
+          chain: { type: "string", enum: ["algorand"] },
+        },
+        required: ["address"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          trust_score: 0.62,
+          tier: "developing",
+          confidence: 1,
+          components: {
+            age: { weight: 0.3, earned: 0.09, basis: "112 days old, full credit at 365" },
+          },
+          positive_signals: ["has_created_assets"],
+          negative_signals: [],
+          identity: null,
         },
       },
     }),
@@ -200,12 +543,56 @@ const routes: RoutesConfig = {
   },
 };
 
+
+// /ask is registered as a paid route only when a model is configured. The
+// paywall charges before the handler runs, so advertising it without a key
+// would take payment for a request that can only fail.
+if (hasLlm) {
+  routes["POST /ask"] = {
+    accepts: accepts(PRICES.ask),
+    resource: `${config.baseUrl}/ask`,
+    description:
+      "Ask a question in plain language. Routes across token, wallet, transaction, discovery, " +
+      "portfolio, smart-money, contract and reputation intelligence, then answers only from what " +
+      "those capabilities returned. The structured results come back alongside the prose so " +
+      "every figure can be checked against its source.",
+    mimeType: "application/json",
+    unpaidResponseBody: unpaidBody(
+      "POST /ask",
+      PRICES.ask,
+      "Natural-language questions answered from live on-chain data, with the data attached.",
+    ),
+    extensions: declareDiscoveryExtension({
+      bodyType: "json",
+      input: { question: "Is ASA 31566704 safe to trade, and who has been buying it this week?" },
+      inputSchema: {
+        type: "object",
+        properties: {
+          question: { type: "string", description: "Plain-language question, 500 characters max" },
+        },
+        required: ["question"],
+      },
+      output: {
+        example: {
+          status: "ok",
+          answer: "One-paragraph answer grounded in the tool results below.",
+          tools_used: [{ tool: "analyze_token", input: { asset: "31566704", chain: "algorand" } }],
+          data: {},
+          steps: 2,
+        },
+      },
+    }),
+  };
+}
+
 const app = new Hono();
 
 app.get("/", (c) =>
   c.json({
     name: "Verdict",
-    tagline: "The intelligence endpoint AI agents pay for, settled in USDCa on Algorand.",
+    tagline:
+      "The blockchain intelligence layer for AI agents, wallets and DeFi — paid per request, " +
+      "settled in USDCa on Algorand.",
     status: "beta",
     payment: {
       protocol: "x402",
@@ -219,6 +606,14 @@ app.get("/", (c) =>
       { route: "POST /wallet/analyze", price: PRICES.walletAnalyze },
       { route: "POST /wallet/analyze?depth=deep", price: PRICES.walletAnalyzeDeep },
       { route: "POST /token/analyze", price: PRICES.tokenAnalyze },
+      { route: "POST /tx/explain", price: PRICES.txExplain, note: "Algorand only" },
+      { route: "POST /tx/simulate", price: PRICES.txSimulate, note: "Algorand only" },
+      { route: "POST /discover", price: PRICES.discover, note: "Algorand only" },
+      { route: "POST /portfolio", price: PRICES.portfolio, note: "Algorand only" },
+      { route: "POST /smart-money", price: PRICES.smartMoney, note: "Algorand only" },
+      { route: "POST /contract/analyze", price: PRICES.contractAnalyze, note: "Algorand only" },
+      { route: "POST /reputation", price: PRICES.reputation, note: "Algorand only" },
+      ...(hasLlm ? [{ route: "POST /ask", price: PRICES.ask, note: "Natural language over every capability" }] : []),
       { route: "POST /watch/poll", price: PRICES.watchPoll },
       { route: "GET /fund", price: "free", note: "How to get an agent wallet that can pay" },
     ],
@@ -273,6 +668,13 @@ app.use(paymentMiddleware(routes, resourceServer));
 app.route("/wallet", wallet);
 app.route("/token", token);
 app.route("/watch", watch);
+app.route("/tx", tx);
+app.route("/discover", discovery);
+app.route("/portfolio", portfolio);
+app.route("/smart-money", smartMoney);
+app.route("/contract", contract);
+app.route("/reputation", reputation);
+app.route("/ask", askRoute);
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Verdict listening on :${info.port}`);
