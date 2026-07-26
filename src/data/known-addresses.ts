@@ -7,7 +7,7 @@ import type { Chain } from "../config.js";
  * "widely attributed to" rather than authoritative. EVM addresses lowercase.
  */
 export interface KnownAddress {
-  label: "cex" | "mixer" | "bridge";
+  label: "cex" | "mixer" | "bridge" | "burn";
   name: string;
 }
 
@@ -41,6 +41,12 @@ const EVM: Record<string, KnownAddress> = {
 };
 
 const ALGORAND: Record<string, KnownAddress> = {
+  // The all-zero public key. No private key exists for it, so anything sent here
+  // is unrecoverable — Algorand's de facto burn address.
+  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAY5HFKQ: {
+    label: "burn",
+    name: "Zero address (unspendable)",
+  },
   // Widely attributed Binance hot address on Algorand (verified to exist on-chain
   // since 2020; attribution is community consensus, not an official statement).
   ZW3ISEHZUHPO7OZGMKLKIIMKVICOUDRCERI454I3DB2BH52HGLSO67W754: { label: "cex", name: "Binance" },
