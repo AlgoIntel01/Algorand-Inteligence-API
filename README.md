@@ -260,10 +260,8 @@ New capabilities launch Algorand-first. `/token/analyze` and `/wallet/analyze` r
 
 ## From TypeScript
 
-The client lives in [`sdk/ts/`](sdk/ts). Until it is published to npm, install it from the repo:
-
 ```bash
-npm install ./sdk/ts        # or "verdict-sdk": "file:../sdk/ts" in package.json
+npm install verdict-sdk
 ```
 
 ```ts

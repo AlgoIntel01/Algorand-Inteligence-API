@@ -5,10 +5,8 @@ blockchain intelligence layer for AI agents, wallets and DeFi. Calls are paid pe
 on Algorand over [x402](https://algorand.co/agentic-commerce/x402/developers). No API key, no
 account, no subscription.
 
-Not yet published to npm. Install it from the repository:
-
 ```bash
-npm install ./sdk/ts        # or "verdict-sdk": "file:../sdk/ts" in package.json
+npm install verdict-sdk
 ```
 
 ## Use

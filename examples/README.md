@@ -13,7 +13,7 @@ degrades to funding instructions rather than a stack trace when no wallet is con
 
 ```bash
 cd examples/ai-agent          # or portfolio-tracker, telegram-bot
-npm install                   # links the local SDK from ../../sdk/ts
+npm install                   # pulls verdict-sdk from npm
 export ALGORAND_PRIVATE_KEY="your 25 word mnemonic"
 node agent.mjs 31566704
 ```

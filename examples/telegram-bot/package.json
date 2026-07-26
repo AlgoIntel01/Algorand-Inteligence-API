@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "verdict-sdk": "file:../../sdk/ts"
+    "verdict-sdk": "^0.1.0"
   }
 }
