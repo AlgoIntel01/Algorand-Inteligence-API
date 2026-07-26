@@ -16,7 +16,8 @@
     "optin-buyer": "tsx scripts/optin-buyer.ts",
     "fund-agent": "tsx scripts/fund-agent.ts",
     "benchmark": "tsx scripts/benchmark.ts",
-    "verify-testnet": "tsx scripts/verify-testnet.ts"
+    "verify-testnet": "NETWORK=testnet tsx scripts/verify-endpoints.ts",
+    "verify-mainnet": "NETWORK=mainnet tsx scripts/verify-endpoints.ts"
   },
   "keywords": [],
   "author": "",

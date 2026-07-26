@@ -1,16 +1,14 @@
 /**
- * TestNet qualification check for the Global x402 Challenge.
+ * Pays every route end to end and reports the settlement txid for each.
  *
- * The challenge requires proving the full flow — x402 request → pay → settle →
- * paid response — on Algorand TestNet before it counts on MainNet. This drives
- * that across every paid route and reports the settlement txid for each.
+ *   npm run verify-testnet                          # free, uses testnet USDC
+ *   npm run verify-mainnet -- --real                # SPENDS REAL USDC
  *
- *   NETWORK=testnet npm run dev            # in one terminal
- *   npm run verify-testnet                 # in another
- *
- * Refuses to run against mainnet. Paying your own endpoint with real USDC would
- * both cost money and, repeated, count as wash trading under the contest rules —
- * this exists precisely so that never has to happen for testing.
+ * TestNet is the default and the safe one: the challenge requires proving the
+ * full flow — x402 request → pay → settle → paid response — there before it
+ * counts on MainNet. MainNet additionally requires --real, because a full pass
+ * moves real money and repeated self-payment is wash trading under the rules.
+ * One pass to register resources in the Bazaar is what the checklist asks for.
  *
  * Note on data: only PAYMENT moves to testnet. The intelligence itself still
  * reads mainnet chain data, because that is where the assets and wallets are.
@@ -20,27 +18,46 @@ import { existsSync } from "node:fs";
 import algosdk from "algosdk";
 import { wrapFetchWithPayment, x402Client } from "@x402-avm/fetch";
 import {
+  ALGORAND_MAINNET_CAIP2,
   ALGORAND_TESTNET_CAIP2,
   ExactAvmScheme,
   toClientAvmSigner,
+  USDC_MAINNET_ASA_ID,
   USDC_TESTNET_ASA_ID,
 } from "@x402-avm/avm";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
-const ALGOD = "https://testnet-api.algonode.cloud";
+const isMainnet = process.env.NETWORK === "mainnet";
+const ALGOD = isMainnet
+  ? "https://mainnet-api.algonode.cloud"
+  : "https://testnet-api.algonode.cloud";
+const CAIP2 = isMainnet ? ALGORAND_MAINNET_CAIP2 : ALGORAND_TESTNET_CAIP2;
+const USDC_ASA = Number(isMainnet ? USDC_MAINNET_ASA_ID : USDC_TESTNET_ASA_ID);
 const apiUrl = (process.env.API_URL ?? "http://localhost:3402").replace(/\/$/, "");
 
-// Hard gate. The whole point of this script is that it cannot spend real money.
-if (process.env.NETWORK !== "testnet") {
-  console.error("Refusing to run: NETWORK is not 'testnet'.");
-  console.error("Set NETWORK=testnet for both the server and this script, then retry.");
+// Check the server actually being paid, not this machine's env: paying a remote
+// deployment publishes ITS advertised URL, and warning about a local
+// PUBLIC_BASE_URL that plays no part is just noise.
+if (/localhost|127\.0\.0\.1/.test(apiUrl)) {
+  console.warn(`WARNING: paying a local server at ${apiUrl}`);
+  console.warn("Settling will publish those localhost URLs to the public Bazaar catalog.");
+  console.warn("They are tagged testnet, but they are unreachable and cannot easily be removed.");
+  console.warn("Set PUBLIC_BASE_URL to a reachable URL first if that matters to you.\n");
+}
+
+
+// A full mainnet pass moves real money. Require saying so out loud.
+if (isMainnet && !process.argv.includes("--real")) {
+  console.error("This would spend REAL USDC across every paid route.");
+  console.error("Re-run with --real if that is what you intend.");
   process.exit(1);
 }
 
-const buyerKey = (process.env.TESTNET_BUYER_KEY ?? process.env.BUYER_PRIVATE_KEY_B64)?.trim();
+const keyVar = isMainnet ? "MAINNET_BUYER_KEY" : "TESTNET_BUYER_KEY";
+const buyerKey = (process.env[keyVar] ?? process.env.BUYER_PRIVATE_KEY_B64)?.trim();
 if (!buyerKey) {
-  console.error("No testnet buyer key — set TESTNET_BUYER_KEY, or run `npm run create-buyer`.");
+  console.error(`No buyer key for ${isMainnet ? "mainnet" : "testnet"} — set ${keyVar} in .env.`);
   process.exit(1);
 }
 
@@ -64,7 +81,7 @@ async function readiness(address: string): Promise<Ready> {
       assets?: Array<{ assetId?: number | bigint; "asset-id"?: number; amount: number | bigint }>;
     };
     // The SDK exports asset ids as strings; the indexer returns numbers.
-    const usdcId = Number(USDC_TESTNET_ASA_ID);
+    const usdcId = USDC_ASA;
     const holding = (info.assets ?? []).find(
       (a) => Number(a.assetId ?? a["asset-id"]) === usdcId,
     );
@@ -85,7 +102,7 @@ const [buyer, seller] = await Promise.all([
   readiness(sellerAddress),
 ]);
 
-console.log("TestNet readiness");
+console.log(`${isMainnet ? "MainNet" : "TestNet"} readiness`);
 console.log(`  buyer  ${signer.address}`);
 console.log(`    ${buyer.algo} ALGO | ${buyer.usdc} USDC | opted in: ${buyer.optedIn}`);
 console.log(`  seller ${sellerAddress}`);
@@ -93,12 +110,12 @@ console.log(`    ${seller.algo} ALGO | ${seller.usdc} USDC | opted in: ${seller.
 console.log();
 
 const blockers: string[] = [];
-if (buyer.algo < 0.2) blockers.push(`buyer needs ~0.3 testnet ALGO (has ${buyer.algo})`);
-if (!buyer.optedIn) blockers.push("buyer must opt into testnet USDC: NETWORK=testnet npm run optin-buyer");
-if (buyer.usdc < 0.6) blockers.push(`buyer needs ~1 testnet USDC to cover a full pass (has ${buyer.usdc})`);
-if (seller.algo < 0.2) blockers.push(`seller needs ~0.3 testnet ALGO (has ${seller.algo})`);
+if (buyer.algo < 0.2) blockers.push(`buyer needs ~0.3 ALGO (has ${buyer.algo})`);
+if (!buyer.optedIn) blockers.push(`buyer must opt into USDC (ASA ${USDC_ASA})`);
+if (buyer.usdc < 0.55) blockers.push(`buyer needs ~0.6 USDC to cover a full pass (has ${buyer.usdc})`);
+if (seller.algo < 0.2) blockers.push(`seller needs ~0.3 ALGO (has ${seller.algo})`);
 if (!seller.optedIn) {
-  blockers.push("seller must opt into testnet USDC to receive: NETWORK=testnet npm run optin-usdca");
+  blockers.push(`seller must opt into USDC (ASA ${USDC_ASA}) to receive`);
 }
 if (blockers.length > 0) {
   console.error("Not ready:");
@@ -112,16 +129,8 @@ if (blockers.length > 0) {
 // public Bazaar catalog — permanently, as far as we can tell. A server running
 // with PUBLIC_BASE_URL=http://localhost:3402 therefore lists localhost resources
 // under your merchant id. Say so before spending, rather than after.
-const advertised = process.env.PUBLIC_BASE_URL ?? "http://localhost:3402";
-if (/localhost|127\.0\.0\.1/.test(advertised)) {
-  console.warn(`WARNING: this server advertises ${advertised}`);
-  console.warn("Settling will publish those localhost URLs to the public Bazaar catalog.");
-  console.warn("They are tagged testnet, but they are unreachable and cannot easily be removed.");
-  console.warn("Set PUBLIC_BASE_URL to a reachable URL first if that matters to you.\n");
-}
-
 const client = new x402Client().register(
-  ALGORAND_TESTNET_CAIP2,
+  CAIP2,
   new ExactAvmScheme(signer, { algodUrl: ALGOD }),
 );
 const fetchWithPay = wrapFetchWithPayment(fetch, client);
@@ -160,7 +169,7 @@ const cases: Case[] = [
   { route: "/ask", price: 0.12, body: { question: "Is ASA 31566704 safe to trade?" } },
 ];
 
-console.log(`Paying ${cases.length} routes on TestNet against ${apiUrl}\n`);
+console.log(`Paying ${cases.length} routes on ${isMainnet ? "MAINNET (real USDC)" : "TestNet"} against ${apiUrl}\n`);
 
 const results: Array<{ route: string; status: number; txid: string | null; note: string }> = [];
 let spent = 0;
@@ -213,7 +222,7 @@ for (const testCase of cases) {
 const paid = results.filter((r) => r.status === 200 && r.txid !== null);
 const failed = results.filter((r) => r.status !== 200);
 
-console.log(`\nSettled ${paid.length}/${cases.length} routes, ~${spent.toFixed(2)} testnet USDC spent.`);
+console.log(`\nSettled ${paid.length}/${cases.length} routes, ~${spent.toFixed(2)} USDC spent.`);
 if (failed.length > 0) {
   console.log("Failed:");
   for (const f of failed) console.log(`  ${f.route}: HTTP ${f.status} — ${f.note}`);
@@ -222,7 +231,7 @@ const after = await readiness(signer.address);
 console.log(`Buyer USDC: ${buyer.usdc} → ${after.usdc}`);
 
 if (paid.length === cases.length) {
-  console.log("\nPASS — full x402 flow verified on TestNet across every paid route.");
+  console.log(`\nPASS — full x402 flow verified on ${isMainnet ? "MainNet" : "TestNet"} across every paid route.`);
 } else {
   console.log("\nINCOMPLETE — see failures above.");
   process.exit(1);
