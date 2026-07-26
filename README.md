@@ -176,7 +176,8 @@ Every route below is live. Nothing on this table is aspirational.
 An empty `/watch/poll` result still costs $0.01 — the query ran, and that's the honest
 model for polling.
 
-Point uptime monitoring at `/ready`, not `/health`. Payment terms are loaded from the
+Point uptime monitoring at `/ready`, not `/health`. The platform healthcheck is pinned to
+`/health` in `railway.json` for the same reason. Payment terms are loaded from the
 facilitator, so if it goes down every paid route fails while the process itself is perfectly
 alive — `/health` stays 200 and reports `status: "degraded"`, `/ready` returns 503, and paid
 routes return a named `facilitator_unavailable` rather than an opaque error. Free routes keep
