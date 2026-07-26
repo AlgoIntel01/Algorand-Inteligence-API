@@ -32,3 +32,23 @@ export async function parseJsonBody(req: Request): Promise<Record<string, unknow
   }
   return parsed as Record<string, unknown>;
 }
+
+/**
+ * Same, but an absent or empty body is valid and means "no options". For routes
+ * where every parameter is optional, requiring `{}` would be a pointless hurdle
+ * for an agent calling the endpoint for the first time.
+ */
+export async function parseOptionalJsonBody(req: Request): Promise<Record<string, unknown>> {
+  const text = (await req.text()).trim();
+  if (text.length === 0) return {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new ValidationError("Request body must be valid JSON");
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new ValidationError("Request body must be a JSON object");
+  }
+  return parsed as Record<string, unknown>;
+}
