@@ -8,7 +8,7 @@ import {
   bazaarResourceServerExtension,
   declareDiscoveryExtension,
 } from "@x402-avm/extensions/bazaar";
-import { loggingFacilitator } from "./facilitator.js";
+import { checkFacilitator, loggingFacilitator } from "./facilitator.js";
 import { assertConfig, config, PRICES, SUPPORTED_CHAINS } from "./config.js";
 import { wallet } from "./routes/wallet.js";
 import { token } from "./routes/token.js";
@@ -620,7 +620,49 @@ app.get("/", (c) =>
     chains: SUPPORTED_CHAINS,
   }),
 );
-app.get("/health", (c) => c.json({ ok: true, network: config.network }));
+/**
+ * Liveness. Always 200 while the process is answering, because restarting this
+ * container cannot fix an outage in someone else's service — a probe that fails
+ * on a facilitator outage would just flap. Degradation is reported in the body,
+ * and /ready is the endpoint that fails loudly.
+ */
+app.get("/health", async (c) => {
+  const facilitator = await checkFacilitator();
+  return c.json({
+    ok: true,
+    status: facilitator.reachable ? "ok" : "degraded",
+    network: config.network,
+    facilitator,
+    paid_routes: facilitator.reachable ? "available" : "unavailable",
+    ...(facilitator.reachable
+      ? {}
+      : {
+          note:
+            "The facilitator is not answering, so payment terms cannot be loaded and every paid " +
+            "route will fail until it recovers. Free routes are unaffected.",
+        }),
+  });
+});
+
+/**
+ * Readiness: can this service actually sell anything right now? Returns 503 when
+ * the facilitator is unreachable. Point uptime monitoring here rather than at
+ * /health, which reports only that the process is alive.
+ */
+app.get("/ready", async (c) => {
+  const facilitator = await checkFacilitator();
+  return c.json(
+    {
+      ready: facilitator.reachable,
+      network: config.network,
+      facilitator,
+      ...(facilitator.reachable
+        ? {}
+        : { reason: "facilitator_unreachable: paid routes cannot serve payment terms" }),
+    },
+    facilitator.reachable ? 200 : 503,
+  );
+});
 
 // Free public good: how to get an agent wallet that can pay x402 services on
 // Algorand. Most agents live on Base/Solana and cannot pay USDCa without this.
@@ -675,6 +717,72 @@ app.route("/smart-money", smartMoney);
 app.route("/contract", contract);
 app.route("/reputation", reputation);
 app.route("/ask", askRoute);
+
+/**
+ * The payment middleware throws when it cannot load supported payment kinds from
+ * the facilitator, which surfaced as an opaque 500 on every paid route during a
+ * real outage. Name the cause instead, and use 503 so callers and monitors can
+ * tell "come back shortly" apart from "this request was wrong".
+ */
+app.onError((err, c) => {
+  const message = err instanceof Error ? err.message : String(err);
+  if (/no supported payment kinds|Failed to initialize/i.test(message)) {
+    console.error(`[payment] facilitator unavailable: ${message}`);
+    return c.json(
+      {
+        error: "facilitator_unavailable",
+        message:
+          "Payment terms could not be loaded from the facilitator, so this paid route cannot be " +
+          "served right now. This is an upstream outage, not a problem with your request — retry " +
+          "shortly. GET /ready reports when it clears.",
+        facilitator: config.facilitatorUrl,
+      },
+      503,
+    );
+  }
+  console.error(`[error] ${message}`);
+  return c.json({ error: "internal_error", message: "Unexpected failure." }, 500);
+});
+
+/** Recognises the payment middleware's failure to reach the facilitator. */
+function isFacilitatorInitFailure(reason: unknown): boolean {
+  const message = reason instanceof Error ? reason.message : String(reason);
+  return /no supported payment kinds|Failed to initialize/i.test(message);
+}
+
+/**
+ * Survive a facilitator outage instead of crash-looping through it.
+ *
+ * The middleware initialises its supported payment kinds eagerly, and when the
+ * facilitator is unreachable at boot that rejection lands outside any request —
+ * where app.onError cannot see it — and takes the process down. On a platform
+ * that restarts on exit, that is a crash loop in which /health and /ready cannot
+ * answer at all, which is strictly worse than serving free routes and reporting
+ * the paid surface as unavailable.
+ *
+ * Scoped deliberately: only this known upstream failure is survivable. Anything
+ * else still exits non-zero, because swallowing unknown faults hides real bugs.
+ */
+process.on("unhandledRejection", (reason) => {
+  if (isFacilitatorInitFailure(reason)) {
+    console.error(
+      "[payment] facilitator unreachable during initialization — staying up to serve free " +
+        "routes; paid routes will 503 until it recovers. GET /ready reports status.",
+    );
+    return;
+  }
+  console.error("[fatal] unhandled rejection:", reason);
+  process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+  if (isFacilitatorInitFailure(err)) {
+    console.error(`[payment] facilitator unreachable: ${err.message} — staying up.`);
+    return;
+  }
+  console.error("[fatal] uncaught exception:", err);
+  process.exit(1);
+});
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`Algo Verdict API listening on :${info.port}`);

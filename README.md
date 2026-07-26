@@ -170,10 +170,17 @@ Every route below is live. Nothing on this table is aspirational.
 | `POST /watch/poll` | $0.01 | Everything that changed across your watched wallets and tokens since your cursor |
 | `GET /` | free | Service card: endpoints, prices, payment terms |
 | `GET /fund` | free | How to get a wallet that can pay, as JSON |
-| `GET /health` | free | Liveness |
+| `GET /health` | free | Liveness, plus facilitator reachability and whether paid routes can serve |
+| `GET /ready` | free | Readiness: 200 when paid routes can serve, 503 when the facilitator is unreachable |
 
 An empty `/watch/poll` result still costs $0.01 — the query ran, and that's the honest
 model for polling.
+
+Point uptime monitoring at `/ready`, not `/health`. Payment terms are loaded from the
+facilitator, so if it goes down every paid route fails while the process itself is perfectly
+alive — `/health` stays 200 and reports `status: "degraded"`, `/ready` returns 503, and paid
+routes return a named `facilitator_unavailable` rather than an opaque error. Free routes keep
+serving throughout.
 
 ### Request shapes
 
