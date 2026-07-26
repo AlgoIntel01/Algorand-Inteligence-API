@@ -60,7 +60,7 @@ export class VerdictError extends Error {
 }
 
 /**
- * Client for the Verdict intelligence API.
+ * Client for the Algo Verdict API intelligence service.
  *
  * Paid calls settle in USDC on Algorand over x402. Payment is gasless — the
  * facilitator covers transaction fees — so the wallet needs USDC but no ALGO

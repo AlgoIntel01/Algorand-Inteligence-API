@@ -1,7 +1,7 @@
 # Examples
 
-Three programs that use Verdict for real. Each one pays per call in USDC on Algorand, and each
-degrades to funding instructions rather than a stack trace when no wallet is configured.
+Three programs that use Algo Verdict API for real. Each one pays per call in USDC on Algorand,
+and each degrades to funding instructions rather than a stack trace when no wallet is configured.
 
 | Example | What it shows |
 |---|---|

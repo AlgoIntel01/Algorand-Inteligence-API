@@ -1,8 +1,8 @@
-# Verdict — The Blockchain Intelligence Layer for AI Agents, Wallets and DeFi
+# Algo Verdict API — The Blockchain Intelligence Layer for AI Agents, Wallets and DeFi
 
 [![npm](https://img.shields.io/npm/v/verdict-mcp?label=verdict-mcp)](https://www.npmjs.com/package/verdict-mcp)
 
-**Verdict is an x402-native intelligence API.** AI agents, wallets, trading bots and DeFi
+**Algo Verdict API is an x402-native intelligence API.** AI agents, wallets, trading bots and DeFi
 applications pay per request for blockchain intelligence, settled in USDC on Algorand via the
 [x402 protocol](https://algorand.co/agentic-commerce/x402/developers).
 
@@ -12,9 +12,9 @@ needs an answer, and it can do that without a human in the loop.
 Instead of every project rebuilding wallet analysis, token risk, monitoring and reputation from
 scratch, they ask one endpoint and get structured intelligence back with the reasoning attached.
 
-Analytics tells you a wallet made 42 trades. Verdict tells you that wallet was funded through
-three throwaway addresses last week, moves in lockstep with eleven others, and has never held a
-token longer than an hour.
+Analytics tells you a wallet made 42 trades. Algo Verdict API tells you that wallet was funded
+through three throwaway addresses last week, moves in lockstep with eleven others, and has never
+held a token longer than an hour.
 
 ## The API answers questions
 
@@ -89,7 +89,7 @@ flowchart TB
     A -->|"x402 payment in USDC, gasless"| F["GoPlausible facilitator"]
     F --> V
 
-    subgraph V["Verdict"]
+    subgraph V["Algo Verdict API"]
         direction LR
         T["Token<br/>intelligence"]
         W["Wallet<br/>intelligence"]
@@ -107,8 +107,8 @@ flowchart TB
     L --> C["Claude"]
 ```
 
-Verdict does not custody funds, execute trades, or sign anything on your behalf. It reads chains
-and answers questions.
+Algo Verdict API does not custody funds, execute trades, or sign anything on your behalf. It
+reads chains and answers questions.
 
 ## Quickstart — from an AI agent
 
@@ -239,8 +239,8 @@ something scored the way it did rather than trusting a number.
 
 ## Roadmap
 
-Verdict is built as an intelligence layer, not a fixed set of endpoints. The capabilities below
-are in flight, ordered by data confidence.
+Algo Verdict API is built as an intelligence layer, not a fixed set of endpoints. The
+capabilities below are in flight, ordered by data confidence.
 
 **Live** — token intelligence, wallet intelligence, funding ancestry, co-funding clusters,
 transaction explain, pre-flight simulation, the discovery feed, portfolio valuation, smart-money
@@ -340,7 +340,7 @@ check without submitting anything.
 
 Token analysis draws on GoPlus for EVM chains and Solana, and the Nodely indexer plus
 Vestige for Algorand. Wallet analysis uses Blockscout for EVM chains and Nodely for
-Algorand. Verdict prose is written by Claude from those signals and cached against a hash of
+Algorand. The verdict prose is written by Claude from those signals and cached against a hash of
 them, so the model runs only when the underlying picture actually changes.
 
 ## Support and license

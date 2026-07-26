@@ -1,7 +1,7 @@
 # verdict-mcp
 
-MCP server for **Verdict** — the blockchain intelligence layer for AI agents, paid per call in
-USDC on Algorand via the [x402](https://x402.org) protocol.
+MCP server for **Algo Verdict API** — the blockchain intelligence layer for AI agents, paid per
+call in USDC on Algorand via the [x402](https://x402.org) protocol.
 
 Give your agent the ability to check whether a token is a rug, whether a wallet is trustworthy,
 what a transaction actually did, what is moving on-chain right now, and whether a transaction

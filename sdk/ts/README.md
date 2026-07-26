@@ -1,7 +1,8 @@
 # verdict-sdk
 
-TypeScript client for [Verdict](https://github.com/AlgoIntel01/Algorand-Inteligence-API) — the
-blockchain intelligence layer for AI agents, wallets and DeFi. Calls are paid per request in USDC
+TypeScript client for
+[Algo Verdict API](https://github.com/AlgoIntel01/Algorand-Inteligence-API) — the blockchain
+intelligence layer for AI agents, wallets and DeFi. Calls are paid per request in USDC
 on Algorand over [x402](https://algorand.co/agentic-commerce/x402/developers). No API key, no
 account, no subscription.
 

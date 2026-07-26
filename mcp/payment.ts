@@ -1,5 +1,5 @@
 /**
- * x402 payment client for the Verdict MCP server.
+ * x402 payment client for the Algo Verdict API MCP server.
  *
  * The agent's Algorand key stays in this process; it signs payment transactions
  * locally and never transmits the key. Payments themselves are gasless — the
@@ -122,7 +122,7 @@ export async function walletBalances(): Promise<{
 export class PaymentUnavailableError extends Error {}
 
 /**
- * POST to a paid Verdict endpoint, settling the x402 challenge automatically.
+ * POST to a paid Algo Verdict API endpoint, settling the x402 challenge automatically.
  * Throws PaymentUnavailableError with actionable guidance when the wallet
  * isn't usable, so the agent learns how to fix it rather than seeing a 402.
  */
@@ -146,13 +146,13 @@ export async function paidPost(path: string, body: unknown): Promise<unknown> {
   }
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Verdict API returned HTTP ${res.status}: ${text.slice(0, 300)}`);
+    throw new Error(`Algo Verdict API API returned HTTP ${res.status}: ${text.slice(0, 300)}`);
   }
   return res.json();
 }
 
 export async function freeGet(path: string): Promise<unknown> {
   const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(15_000) });
-  if (!res.ok) throw new Error(`Verdict API returned HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`Algo Verdict API API returned HTTP ${res.status}`);
   return res.json();
 }

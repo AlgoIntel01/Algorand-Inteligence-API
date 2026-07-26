@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Verdict MCP server — cross-chain wallet and token intelligence for AI agents,
+ * Algo Verdict API MCP server — cross-chain wallet and token intelligence for AI agents,
  * paid per call in USDC on Algorand via the x402 protocol.
  *
  * Configure in any MCP client (Claude Desktop, Claude Code, …):
@@ -34,7 +34,7 @@ const WALLET_CHAINS = ["algorand", "ethereum", "base"] as const;
 const TOKEN_CHAINS = ["algorand", "ethereum", "base", "bsc", "solana"] as const;
 
 const FUNDING_HELP =
-  "To pay for Verdict calls you need an Algorand wallet holding USDC.\n\n" +
+  "To pay for Algo Verdict API calls you need an Algorand wallet holding USDC.\n\n" +
   "Fastest path — the free funding rail:\n" +
   "  git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API\n" +
   "  cd Algorand-Inteligence-API && npm install && npm run fund-agent\n\n" +
@@ -61,7 +61,7 @@ async function paid(path: string, body: unknown): Promise<ToolResult> {
     if (err instanceof PaymentUnavailableError) {
       return fail(`Cannot pay for this call.\n\n${err.message}\n\n${FUNDING_HELP}`);
     }
-    return fail(`Verdict request failed: ${err instanceof Error ? err.message : String(err)}`);
+    return fail(`Algo Verdict API request failed: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -359,9 +359,9 @@ server.registerTool(
 server.registerTool(
   "get_service_info",
   {
-    title: "Verdict service info and pricing",
+    title: "Algo Verdict API service info and pricing",
     description:
-      "Free. Returns the endpoints Verdict offers, their prices, supported chains and payment " +
+      "Free. Returns the endpoints Algo Verdict API offers, their prices, supported chains and payment " +
       "details. Use to see what is available and what each call costs before spending.",
     inputSchema: {},
   },
@@ -369,7 +369,7 @@ server.registerTool(
     try {
       return ok(await freeGet("/"));
     } catch (err) {
-      return fail(`Could not reach Verdict at ${API_BASE}: ${String(err)}`);
+      return fail(`Could not reach Algo Verdict API at ${API_BASE}: ${String(err)}`);
     }
   },
 );

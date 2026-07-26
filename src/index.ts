@@ -589,7 +589,7 @@ const app = new Hono();
 
 app.get("/", (c) =>
   c.json({
-    name: "Verdict",
+    name: "Algo Verdict API",
     tagline:
       "The blockchain intelligence layer for AI agents, wallets and DeFi — paid per request, " +
       "settled in USDCa on Algorand.",
@@ -677,7 +677,7 @@ app.route("/reputation", reputation);
 app.route("/ask", askRoute);
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`Verdict listening on :${info.port}`);
+  console.log(`Algo Verdict API listening on :${info.port}`);
   console.log(`  network:     algorand ${config.network} (${config.caip2})`);
   console.log(`  asset:       USDCa (ASA ${config.usdcAsaId})`);
   console.log(`  payTo:       ${config.sellerAddress}`);

@@ -204,7 +204,7 @@ if (args.includes("--analysis")) {
   process.exit(0);
 }
 
-console.log(`Verdict benchmark — ${apiUrl}`);
+console.log(`Algo Verdict API benchmark — ${apiUrl}`);
 console.log(`${runs} runs per endpoint, ${paid ? "PAID path (includes settlement)" : "unpaid path (402 at the paywall)"}\n`);
 
 const results = [];

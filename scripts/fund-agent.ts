@@ -1,5 +1,5 @@
 /**
- * Verdict funding rail — turn "money on an exchange" into a ready-to-pay x402
+ * Algo Verdict API funding rail — turn "money on an exchange" into a ready-to-pay x402
  * agent wallet on Algorand, in one command:
  *
  *   npm run fund-agent                # human mode
@@ -12,7 +12,7 @@
  * verified locally before signing; keys never leave this machine) → prints the
  * ready-to-pay wallet.
  *
- * Free public good: use it for any x402 service on Algorand, not just Verdict.
+ * Free public good: use it for any x402 service on Algorand, not just Algo Verdict API.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import algosdk from "algosdk";
@@ -36,7 +36,7 @@ const slippage = Number(opt("slippage") ?? "0.01");
 
 if (flag("help") || flag("h")) {
   console.log(`
-Verdict funding rail — get an x402-ready agent wallet on Algorand.
+Algo Verdict API funding rail — get an x402-ready agent wallet on Algorand.
 
   npm run fund-agent [-- <flags>]
 
@@ -94,7 +94,7 @@ async function waitForDeposit(address: string): Promise<bigint> {
     log(
       `About ${reserve} ALGO stays behind for on-chain reserves and fees, so a deposit of ` +
         `N ALGO converts to roughly ${rate.toFixed(4)} × (N − ${reserve}) USDCa. ` +
-        `Verdict calls cost $0.01–$0.50, so send enough for the volume you plan.`,
+        `Algo Verdict API calls cost $0.01–$0.50, so send enough for the volume you plan.`,
     );
   }
   log("\nWithdraw native ALGO from any major exchange or wallet. Waiting for deposit…");
