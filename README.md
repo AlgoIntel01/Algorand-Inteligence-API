@@ -356,5 +356,11 @@ takes over when no model is configured or the model call fails.
 ## Support and license
 
 Issues and pull requests welcome at
-[the repo](https://github.com/AlgoIntel01/Algorand-Inteligence-API/issues). MIT licensed —
-the funding rail in particular is meant to be reused by anyone building on Algorand x402.
+[the repo](https://github.com/AlgoIntel01/Algorand-Inteligence-API/issues).
+
+**MIT licensed**, all of it — including the funding rail, which is meant to be reused by anyone
+building on Algorand x402, and the [SDK](sdk/ts) and [MCP server](mcp) published to npm.
+
+Source-available on purpose: this README claims scores are deterministic, that signals are always
+named, and that missing data returns `null` rather than a guess. Those claims are only worth
+something if you can check them against the code.
