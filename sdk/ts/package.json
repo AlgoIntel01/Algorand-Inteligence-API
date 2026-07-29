@@ -1,6 +1,6 @@
 {
   "name": "verdict-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TypeScript client for Algo Verdict API \u2014 blockchain intelligence for AI agents, paid per call in USDC on Algorand via x402",
   "type": "module",
   "main": "dist/index.js",

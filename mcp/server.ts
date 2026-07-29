@@ -65,7 +65,7 @@ async function paid(path: string, body: unknown): Promise<ToolResult> {
   }
 }
 
-const server = new McpServer({ name: "verdict", version: "0.2.0" });
+const server = new McpServer({ name: "verdict", version: "0.2.1" });
 
 server.registerTool(
   "analyze_token",

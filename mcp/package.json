@@ -1,6 +1,6 @@
 {
   "name": "verdict-mcp",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "MCP server for Algo Verdict API \u2014 the blockchain intelligence layer for AI agents: token, wallet, transaction, discovery, portfolio, smart-money, contract and reputation intelligence, paid per call in USDC on Algorand via x402",
   "type": "module",
   "bin": {
