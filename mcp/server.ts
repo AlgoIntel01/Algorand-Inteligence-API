@@ -36,8 +36,8 @@ const TOKEN_CHAINS = ["algorand", "ethereum", "base", "bsc", "solana"] as const;
 const FUNDING_HELP =
   "To pay for Algo Verdict API calls you need an Algorand wallet holding USDC.\n\n" +
   "Fastest path — the free funding rail:\n" +
-  "  git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API\n" +
-  "  cd Algorand-Inteligence-API && npm install && npm run fund-agent\n\n" +
+  "  git clone https://github.com/AlgoIntel01/Algo-Verdict\n" +
+  "  cd Algo-Verdict && npm install && npm run fund-agent\n\n" +
   "It generates a wallet locally, waits for you to send native ALGO from any exchange, " +
   "opts into USDC, and swaps into USDC — keys never leave your machine. " +
   "Then set ALGORAND_PRIVATE_KEY to the printed mnemonic in this server's env config.\n\n" +

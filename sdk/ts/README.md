@@ -1,7 +1,7 @@
 # verdict-sdk
 
 TypeScript client for
-[Algo Verdict API](https://github.com/AlgoIntel01/Algorand-Inteligence-API) — the blockchain
+[Algo Verdict API](https://github.com/AlgoIntel01/Algo-Verdict) — the blockchain
 intelligence layer for AI agents, wallets and DeFi. Calls are paid per request in USDC
 on Algorand over [x402](https://algorand.co/agentic-commerce/x402/developers). No API key, no
 account, no subscription.
@@ -59,7 +59,7 @@ await verdict.analyzeToken(…); // throws PaymentNotConfiguredError
 ```
 
 To get a wallet that can pay, run `npm run fund-agent` from the
-[main repository](https://github.com/AlgoIntel01/Algorand-Inteligence-API) — keys are generated
+[main repository](https://github.com/AlgoIntel01/Algo-Verdict) — keys are generated
 locally and never leave your machine.
 
 ## Notes

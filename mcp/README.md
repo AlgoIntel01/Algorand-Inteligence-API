@@ -57,8 +57,8 @@ immediately, and any paid tool will tell you exactly how to get funded. Or jump 
 to the funding rail:
 
 ```bash
-git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API
-cd Algorand-Inteligence-API && npm install
+git clone https://github.com/AlgoIntel01/Algo-Verdict
+cd Algo-Verdict && npm install
 npm run fund-agent
 ```
 

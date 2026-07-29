@@ -330,8 +330,8 @@ This repo ships a free one that works with **any** x402 service on Algorand, not
 one:
 
 ```bash
-git clone https://github.com/AlgoIntel01/Algorand-Inteligence-API
-cd Algorand-Inteligence-API && npm install
+git clone https://github.com/AlgoIntel01/Algo-Verdict
+cd Algo-Verdict && npm install
 npm run fund-agent                # add --json for machine-readable output
 ```
 
@@ -356,7 +356,7 @@ takes over when no model is configured or the model call fails.
 ## Support and license
 
 Issues and pull requests welcome at
-[the repo](https://github.com/AlgoIntel01/Algorand-Inteligence-API/issues).
+[the repo](https://github.com/AlgoIntel01/Algo-Verdict/issues).
 
 **MIT licensed**, all of it — including the funding rail, which is meant to be reused by anyone
 building on Algorand x402, and the [SDK](sdk/ts) and [MCP server](mcp) published to npm.

@@ -683,7 +683,7 @@ app.get("/fund", (c) =>
       "Paying USDCa requires an Algorand account, an ASA opt-in for USDC, and a minimum " +
       "ALGO balance. This recipe gets an agent from zero to ready-to-pay.",
     cli: {
-      repo: "https://github.com/AlgoIntel01/Algorand-Inteligence-API",
+      repo: "https://github.com/AlgoIntel01/Algo-Verdict",
       command: "npm run fund-agent",
       flags: {
         "--json": "machine-readable output for agents",
