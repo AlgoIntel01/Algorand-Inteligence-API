@@ -170,6 +170,8 @@ Every route below is live. Nothing on this table is aspirational.
 | `POST /watch/poll` | $0.01 | Everything that changed across your watched wallets and tokens since your cursor |
 | `GET /` | free | Service card: endpoints, prices, payment terms |
 | `GET /fund` | free | How to get a wallet that can pay, as JSON |
+| `GET /llms.txt` | free | What this service sells, in plain text for agents ([llmstxt.org](https://llmstxt.org)) |
+| `GET /.well-known/x402` | free | The same catalogue as JSON, for directory crawlers |
 | `GET /health` | free | Liveness, plus facilitator reachability and whether paid routes can serve |
 | `GET /ready` | free | Readiness: 200 when paid routes can serve, 503 when the facilitator is unreachable |
 

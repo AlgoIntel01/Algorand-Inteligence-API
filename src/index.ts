@@ -715,6 +715,99 @@ app.get("/fund", (c) =>
   }),
 );
 
+/**
+ * Machine-readable descriptions of what this service sells, both generated from
+ * the same `routes` config the paywall uses — so they cannot drift from what a
+ * 402 actually demands.
+ *
+ * Agents and directory crawlers look for these before deciding whether to call a
+ * service, and neither costs a payment to read.
+ */
+interface ManifestEntry {
+  resource: string;
+  method: string;
+  price: string;
+  description: string;
+}
+
+function paidRoutes(): ManifestEntry[] {
+  return Object.entries(routes).map(([key, cfg]) => {
+    const [method, path] = key.split(" ");
+    const config = cfg as { accepts: { price: unknown }; resource: string; description: string };
+    // /wallet/analyze prices per request via a function (deep costs more), so
+    // report the range rather than calling it without a request context.
+    const price =
+      typeof config.accepts.price === "function"
+        ? `${PRICES.walletAnalyze} (${PRICES.walletAnalyzeDeep} with ?depth=deep)`
+        : String(config.accepts.price);
+    return { resource: config.resource ?? path, method, price, description: config.description };
+  });
+}
+
+/** https://llmstxt.org — plain text an agent can read before spending anything. */
+app.get("/llms.txt", (c) => {
+  const paid = paidRoutes()
+    .map((r) => `- [${r.method} ${new URL(r.resource).pathname}](${r.resource}) (${r.price}): ${r.description}`)
+    .join("\n");
+
+  const body = `# Algo Verdict API
+
+> Explainable blockchain intelligence that AI agents buy per request, settled in USDC on Algorand
+> over x402. No API key, no account, no subscription.
+
+Every score names the signals that produced it, and every field a data source cannot provide comes
+back \`null\` rather than a guess — so an agent can tell "we looked and it is clean" apart from "we
+could not see". Token analysis covers Algorand, Ethereum, Base, BNB Chain and Solana; wallet
+analysis covers Algorand, Ethereum and Base; the remaining capabilities are Algorand-native.
+
+Payment is gasless: the facilitator covers transaction fees, so a caller needs USDC and nothing
+else. Request without payment and you get HTTP 402 with the terms in the \`payment-required\`
+header, including a Bazaar discovery extension describing the input schema.
+
+## Paid endpoints
+
+${paid}
+
+## Free endpoints
+
+- [GET /](${config.baseUrl}/): Service card — endpoints, prices and payment terms.
+- [GET /fund](${config.baseUrl}/fund): How to get an Algorand wallet that can pay, as JSON. Circle's CCTP does not bridge to Algorand, so this describes the ALGO-in plus swap route that works for any Algorand x402 service.
+- [GET /health](${config.baseUrl}/health): Liveness, plus whether the facilitator is reachable.
+- [GET /ready](${config.baseUrl}/ready): Readiness — 503 when paid routes cannot serve.
+- [GET /.well-known/x402](${config.baseUrl}/.well-known/x402): This catalogue as JSON.
+
+## Notes
+
+- Settlement: USDC (ASA ${config.usdcAsaId}) on Algorand ${config.network}, via the GoPlausible facilitator.
+- A failed Algorand transaction is never written to the ledger and cannot be explained after the fact; POST /tx/simulate answers that question before you sign instead.
+- Contract audit status and ABI methods are always null: Algorand has no audit registry, and applications carry no on-chain ABI.
+`;
+  return c.text(body);
+});
+
+/** JSON form of the same catalogue, for crawlers that expect a manifest. */
+app.get("/.well-known/x402", (c) =>
+  c.json({
+    x402Version: 2,
+    name: "Algo Verdict API",
+    description:
+      "Explainable blockchain intelligence for AI agents, wallets and DeFi, paid per request in " +
+      "USDC on Algorand via x402.",
+    documentation: `${config.baseUrl}/llms.txt`,
+    source: "https://github.com/AlgoIntel01/Algo-Verdict",
+    payment: {
+      scheme: "exact",
+      network: config.caip2,
+      asset: { id: config.usdcAsaId, symbol: "USDC", decimals: 6 },
+      payTo: config.sellerAddress,
+      facilitator: config.facilitatorUrl,
+      feeAbstraction: true,
+    },
+    resources: paidRoutes(),
+    free: [`${config.baseUrl}/`, `${config.baseUrl}/fund`, `${config.baseUrl}/health`, `${config.baseUrl}/ready`],
+  }),
+);
+
 app.use(paymentMiddleware(routes, resourceServer));
 
 app.route("/wallet", wallet);
