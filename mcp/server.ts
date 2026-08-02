@@ -18,6 +18,7 @@
  * Without a key the server still runs: the free tools work and the paid tools
  * explain exactly how to get a funded wallet instead of failing cryptically.
  */
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -65,7 +66,28 @@ async function paid(path: string, body: unknown): Promise<ToolResult> {
   }
 }
 
-const server = new McpServer({ name: "verdict", version: "0.2.1" });
+/**
+ * Reported to every client in the initialize handshake, so it has to be the
+ * version that actually shipped — a literal here silently drifted a release
+ * behind package.json once already. Resolved from disk rather than restated:
+ * one path from source (./package.json), one from the compiled dist/server.js
+ * (../package.json), and the name check makes sure a miss cannot pick up the
+ * repo root's package.json instead.
+ */
+function packageVersion(): string {
+  const require = createRequire(import.meta.url);
+  for (const path of ["../package.json", "./package.json"]) {
+    try {
+      const pkg = require(path) as { name?: string; version?: string };
+      if (pkg.name === "verdict-mcp" && pkg.version) return pkg.version;
+    } catch {
+      // Try the next location.
+    }
+  }
+  return "0.0.0-unknown";
+}
+
+const server = new McpServer({ name: "verdict", version: packageVersion() });
 
 server.registerTool(
   "analyze_token",
