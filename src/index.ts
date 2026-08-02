@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { paymentMiddleware } from "@x402-avm/hono";
@@ -10,6 +11,14 @@ import {
 } from "@x402-avm/extensions/bazaar";
 import { checkFacilitator, loggingFacilitator } from "./facilitator.js";
 import { assertConfig, config, PRICES, SUPPORTED_CHAINS } from "./config.js";
+import {
+  FAVICON_SVG,
+  pathOf,
+  prefersHtml,
+  renderEndpointPage,
+  renderLandingPage,
+  type ManifestEntry,
+} from "./site.js";
 import { wallet } from "./routes/wallet.js";
 import { token } from "./routes/token.js";
 import { watch } from "./routes/watch.js";
@@ -597,8 +606,20 @@ if (hasLlm) {
 
 const app = new Hono();
 
-app.get("/", (c) =>
-  c.json({
+/**
+ * The service card, in whichever form the caller asked for.
+ *
+ * Browsers and metadata crawlers name `text/html` in Accept and get the landing
+ * page; everything else — including a bare `fetch()`, which sends the wildcard —
+ * gets the JSON below unchanged. `Vary` keeps a cache from serving one to a
+ * caller that wanted the other.
+ */
+app.get("/", (c) => {
+  c.header("Vary", "Accept");
+  if (prefersHtml(c.req.header("accept"))) {
+    return c.html(renderLandingPage(paidRoutes()));
+  }
+  return c.json({
     name: "Algo Verdict API",
     tagline:
       "The blockchain intelligence layer for AI agents, wallets and DeFi — paid per request, " +
@@ -628,8 +649,35 @@ app.get("/", (c) =>
       { route: "GET /fund", price: "free", note: "How to get an agent wallet that can pay" },
     ],
     chains: SUPPORTED_CHAINS,
-  }),
-);
+  });
+});
+
+app.get("/favicon.svg", (c) => {
+  c.header("Content-Type", "image/svg+xml");
+  c.header("Cache-Control", "public, max-age=86400");
+  return c.body(FAVICON_SVG);
+});
+
+/**
+ * Social/preview card image. Lives in `public/` rather than `src/` because
+ * tsconfig sets rootDir to src, so nothing but compiled TypeScript reaches
+ * dist/ — and it is resolved relative to this module rather than the working
+ * directory so it loads identically under `tsx src/index.ts` and
+ * `node dist/index.js`.
+ */
+const OG_IMAGE = new URL("../public/og.png", import.meta.url);
+
+app.get("/og.png", async (c) => {
+  try {
+    const image = await readFile(OG_IMAGE);
+    c.header("Content-Type", "image/png");
+    c.header("Cache-Control", "public, max-age=604800");
+    return c.body(image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength) as ArrayBuffer);
+  } catch {
+    return c.json({ error: "not_found" }, 404);
+  }
+});
+
 /**
  * Liveness. Always 200 while the process is answering, because restarting this
  * container cannot fix an outage in someone else's service — a probe that fails
@@ -723,13 +771,6 @@ app.get("/fund", (c) =>
  * Agents and directory crawlers look for these before deciding whether to call a
  * service, and neither costs a payment to read.
  */
-interface ManifestEntry {
-  resource: string;
-  method: string;
-  price: string;
-  description: string;
-}
-
 function paidRoutes(): ManifestEntry[] {
   return Object.entries(routes).map(([key, cfg]) => {
     const [method, path] = key.split(" ");
@@ -807,6 +848,37 @@ app.get("/.well-known/x402", (c) =>
     free: [`${config.baseUrl}/`, `${config.baseUrl}/fund`, `${config.baseUrl}/health`, `${config.baseUrl}/ready`],
   }),
 );
+
+/**
+ * A paid route answers POST. A GET on one used to 404 — but those exact URLs are
+ * what settlement publishes into the public Bazaar catalogue, so they are the
+ * first thing a crawler or a developer following a catalogue link actually
+ * fetches. Answer with what the endpoint is and how to pay for it instead.
+ *
+ * Registered ahead of the paywall and the route mounts. Nothing here can be
+ * mistaken for a free version of the endpoint: the work still only happens on
+ * POST, behind the 402.
+ */
+for (const entry of paidRoutes()) {
+  app.get(pathOf(entry.resource), (c) => {
+    c.header("Allow", entry.method);
+    c.header("Vary", "Accept");
+    if (prefersHtml(c.req.header("accept"))) {
+      return c.html(renderEndpointPage(entry), 405);
+    }
+    return c.json(
+      {
+        error: "method_not_allowed",
+        endpoint: `${entry.method} ${pathOf(entry.resource)}`,
+        price: entry.price,
+        description: entry.description,
+        how_to_call: `Send ${entry.method} to this URL. Unpaid requests return HTTP 402 with the payment terms and input schema in the payment-required header.`,
+        catalogue: `${config.baseUrl}/.well-known/x402`,
+      },
+      405,
+    );
+  });
+}
 
 app.use(paymentMiddleware(routes, resourceServer));
 

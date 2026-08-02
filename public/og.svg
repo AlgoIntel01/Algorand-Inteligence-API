@@ -1,0 +1,44 @@
+<!--
+  Source for og.png, the social/preview card. Regenerate after editing:
+
+    cd public && "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      --headless --disable-gpu --hide-scrollbars --screenshot=og.png \
+      --window-size=1200,630 --force-device-scale-factor=1 "file://$PWD/og.svg"
+
+  qlmanage renders this onto a square canvas and crops it — use the line above.
+  Crawlers want a raster image at exactly 1200x630, so og.png is what ships and
+  this file is only the source.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#5aa2ff"/>
+
+  <g transform="translate(80,96)">
+    <rect width="76" height="76" rx="17" fill="#141a23" stroke="#232a35" stroke-width="2"/>
+    <path d="M18 55 L38 21 L58 55" fill="none" stroke="#5aa2ff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28 47 L48 47" fill="none" stroke="#5aa2ff" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <text x="184" y="150" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="46" font-weight="700" fill="#e6e9ef" letter-spacing="-1">Algo Verdict API</text>
+
+  <text x="80" y="288" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="62" font-weight="700" fill="#e6e9ef" letter-spacing="-1.5">Blockchain intelligence</text>
+  <text x="80" y="362" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="62" font-weight="700" fill="#e6e9ef" letter-spacing="-1.5">for AI agents</text>
+
+  <text x="80" y="428" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="30" fill="#9aa4b2">Paid per request. Settled in USDC on Algorand over x402.</text>
+
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="23" fill="#9aa4b2">
+    <rect x="80" y="486" width="196" height="52" rx="26" fill="none" stroke="#232a35" stroke-width="2"/>
+    <text x="178" y="519" text-anchor="middle">No API key</text>
+
+    <rect x="292" y="486" width="196" height="52" rx="26" fill="none" stroke="#232a35" stroke-width="2"/>
+    <text x="390" y="519" text-anchor="middle">No account</text>
+
+    <rect x="504" y="486" width="164" height="52" rx="26" fill="none" stroke="#232a35" stroke-width="2"/>
+    <text x="586" y="519" text-anchor="middle">Gasless</text>
+
+    <rect x="684" y="486" width="248" height="52" rx="26" fill="none" stroke="#232a35" stroke-width="2"/>
+    <text x="808" y="519" text-anchor="middle">11 paid endpoints</text>
+  </g>
+
+  <text x="1120" y="519" text-anchor="end" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="23" fill="#5aa2ff">algoverdict.xyz</text>
+</svg>
