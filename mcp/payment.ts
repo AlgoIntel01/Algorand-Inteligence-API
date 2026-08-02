@@ -29,7 +29,7 @@ const ALGOD_URL =
 const USDC_ASA = NETWORK === "mainnet" ? 31566704 : 10458941;
 
 export const API_BASE =
-  process.env.VERDICT_API_URL ?? "https://algorand-inteligence-api-production.up.railway.app";
+  process.env.VERDICT_API_URL ?? "https://algoverdict.xyz";
 
 export interface WalletState {
   configured: boolean;

@@ -25,7 +25,7 @@ import {
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 
-const apiUrl = (process.env.API_URL ?? "https://algorand-inteligence-api-production.up.railway.app").replace(/\/$/, "");
+const apiUrl = (process.env.API_URL ?? "https://algoverdict.xyz").replace(/\/$/, "");
 const args = process.argv.slice(2);
 const runs = Number(args[args.indexOf("--runs") + 1]) || 5;
 const paid = args.includes("--paid");

@@ -2,6 +2,8 @@
 
 [![npm](https://img.shields.io/npm/v/verdict-mcp?label=verdict-mcp)](https://www.npmjs.com/package/verdict-mcp)
 
+**Live at [algoverdict.xyz](https://algoverdict.xyz)**
+
 **Algo Verdict API is an x402-native intelligence API.** AI agents, wallets, trading bots and DeFi
 applications pay per request for blockchain intelligence, settled in USDC on Algorand via the
 [x402 protocol](https://algorand.co/agentic-commerce/x402/developers).
@@ -141,7 +143,7 @@ Any x402-capable client works. Request without payment and you get `HTTP 402` pl
 payment terms in the `payment-required` header:
 
 ```bash
-curl -X POST https://algorand-inteligence-api-production.up.railway.app/token/analyze \
+curl -X POST https://algoverdict.xyz/token/analyze \
   -H "Content-Type: application/json" \
   -d '{"asset": "31566704", "chain": "algorand"}'
 ```

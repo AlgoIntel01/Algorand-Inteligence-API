@@ -27,7 +27,7 @@ import type {
 
 export * from "./types.js";
 
-const DEFAULT_BASE_URL = "https://algorand-inteligence-api-production.up.railway.app";
+const DEFAULT_BASE_URL = "https://algoverdict.xyz";
 
 const ALGOD_URL = {
   mainnet: "https://mainnet-api.algonode.cloud",

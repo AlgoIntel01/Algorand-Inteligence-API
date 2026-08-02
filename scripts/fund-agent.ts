@@ -191,7 +191,7 @@ async function main(): Promise<void> {
     usdca_balance: Number(usdca?.amount ?? 0) / MICRO,
     network,
     example_x402_call:
-      "https://algorand-inteligence-api-production.up.railway.app/token/analyze",
+      "https://algoverdict.xyz/token/analyze",
   };
   if (jsonMode) {
     console.log(JSON.stringify(result));
