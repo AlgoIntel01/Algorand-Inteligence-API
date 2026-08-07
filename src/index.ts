@@ -12,7 +12,6 @@ import {
 import { checkFacilitator, loggingFacilitator } from "./facilitator.js";
 import { assertConfig, config, PRICES, SUPPORTED_CHAINS } from "./config.js";
 import {
-  FAVICON_SVG,
   pathOf,
   prefersHtml,
   renderEndpointPage,
@@ -652,31 +651,38 @@ app.get("/", (c) => {
   });
 });
 
-app.get("/favicon.svg", (c) => {
-  c.header("Content-Type", "image/svg+xml");
-  c.header("Cache-Control", "public, max-age=86400");
-  return c.body(FAVICON_SVG);
-});
-
 /**
- * Social/preview card image. Lives in `public/` rather than `src/` because
- * tsconfig sets rootDir to src, so nothing but compiled TypeScript reaches
- * dist/ — and it is resolved relative to this module rather than the working
- * directory so it loads identically under `tsx src/index.ts` and
- * `node dist/index.js`.
+ * Brand assets: the preview card, and the icons the x402 indexer reads to put a
+ * logo beside this merchant in the public catalogue. Different crawlers look in
+ * different places — some only ever try /favicon.ico — so every conventional
+ * path is served rather than just the one this page links first.
+ *
+ * They live in `public/` rather than `src/` because tsconfig sets rootDir to
+ * src, so nothing but compiled TypeScript reaches dist/. Each is resolved
+ * relative to this module rather than the working directory, so it loads
+ * identically under `tsx src/index.ts` and `node dist/index.js`.
  */
-const OG_IMAGE = new URL("../public/og.png", import.meta.url);
+const ASSETS: Record<string, { file: string; type: string }> = {
+  "/og.png": { file: "og.png", type: "image/png" },
+  "/favicon.ico": { file: "favicon.ico", type: "image/x-icon" },
+  "/favicon.png": { file: "favicon.png", type: "image/png" },
+  "/favicon.svg": { file: "favicon.svg", type: "image/svg+xml" },
+  "/apple-touch-icon.png": { file: "apple-touch-icon.png", type: "image/png" },
+  "/logo.png": { file: "logo.png", type: "image/png" },
+};
 
-app.get("/og.png", async (c) => {
-  try {
-    const image = await readFile(OG_IMAGE);
-    c.header("Content-Type", "image/png");
-    c.header("Cache-Control", "public, max-age=604800");
-    return c.body(image.buffer.slice(image.byteOffset, image.byteOffset + image.byteLength) as ArrayBuffer);
-  } catch {
-    return c.json({ error: "not_found" }, 404);
-  }
-});
+for (const [route, asset] of Object.entries(ASSETS)) {
+  app.get(route, async (c) => {
+    try {
+      const bytes = await readFile(new URL(`../public/${asset.file}`, import.meta.url));
+      c.header("Content-Type", asset.type);
+      c.header("Cache-Control", "public, max-age=604800");
+      return c.body(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
+    } catch {
+      return c.json({ error: "not_found" }, 404);
+    }
+  });
+}
 
 /**
  * Liveness. Always 200 while the process is answering, because restarting this

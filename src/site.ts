@@ -67,8 +67,8 @@ export function pathOf(resource: string): string {
 }
 
 const STYLE = `
-:root{color-scheme:light dark;--bg:#fff;--fg:#16181d;--muted:#5c6370;--line:#e3e6eb;--card:#f7f8fa;--accent:#1a6feb}
-@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6e9ef;--muted:#9aa4b2;--line:#232a35;--card:#141a23;--accent:#5aa2ff}}
+:root{color-scheme:light dark;--bg:#fff;--fg:#16181d;--muted:#5c6370;--line:#e3e6eb;--card:#f7f8fa;--accent:#0f8a52}
+@media(prefers-color-scheme:dark){:root{--bg:#0d1117;--fg:#e6e9ef;--muted:#9aa4b2;--line:#232a35;--card:#141a23;--accent:#4ecb7b}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
 main{max-width:52rem;margin:0 auto;padding:3rem 1.25rem 5rem}
@@ -108,7 +108,10 @@ function head({ title, description, canonical }: HeadOptions): string {
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(canonical)}">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="512x512">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="${esc(SITE.name)}">
 <meta property="og:title" content="${esc(title)}">
@@ -290,10 +293,3 @@ ${settlementTable()}
 </html>
 `;
 }
-
-/** Inline mark, small enough to serve from memory. */
-export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect width="64" height="64" rx="14" fill="#0d1117"/>
-<path d="M14 44 L32 16 L50 44" fill="none" stroke="#5aa2ff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M23 38 L41 38" fill="none" stroke="#5aa2ff" stroke-width="7" stroke-linecap="round"/>
-</svg>`;
